@@ -206,20 +206,6 @@ double laplace(double *w, int position, int r_or_phi, int r_pos){
 
 }*/
 
-double d_pressure(double *u_phi, int position, int r_pos){
-    double value;
-    if(position%N[1]==0){
-        value = ((u_phi[position+1]*u_phi[position+1]*u_phi[position+1]) - (u_phi[position + N[1]-1]*u_phi[position+ N[1]-1]*u_phi[position+ N[1]-1]))/(3.0*radius[position]*grid_spacing[1]);
-    }else if(position%N[1] ==(N[1]-1)){
-        value = ((u_phi[position-N[1]+1]*u_phi[position-N[1]+1]*u_phi[position-N[1]+1]) - (u_phi[position-1]*u_phi[position-1]*u_phi[position-1]))/(3.0*radius[position]*grid_spacing[1]);
-    }else{
-        value = ((u_phi[position+1]*u_phi[position+1]*u_phi[position+1]) - (u_phi[position-1]*u_phi[position-1]*u_phi[position-1]))/(3.0*radius[position]*grid_spacing[1]);
-    }
-    
-    return value;
-
-}
-
 
 void save_data(){
     output=fopen("u_phi.txt", "w");
@@ -255,7 +241,7 @@ void integration(){
 */
 int main(int argc, char **argv)
 {
-    CFL = 0.025;
+    CFL = 0.02;
     r1 = 1.0;
     r2 = 2.0;
     N[0] = 256; // array size in each direction, N[0] = rdim
@@ -286,18 +272,7 @@ int main(int argc, char **argv)
     //the vorticity in time using RK3 and then use a relaxing scheme
     //to get psi at each step.
     
-/*
-    output2=fopen("psi2.txt", "w");
-    int g;
-    for(g = 0; g<N[0]*N[1]; g++)
-    {
-        if(g%N[0]==(N[0]-1)){
-            fprintf(output2, "%f \n", Psi0[g]);
-        }else{
-            fprintf(output2, "%f    ", Psi0[g]);
-        }
-        
-    }*/
+
     
     const double nu = 0.1; //viscocity
     //Re = V_phi_outer*grid_spacing[1]/nu; //Reynolds number
@@ -307,29 +282,10 @@ int main(int argc, char **argv)
     omega= 2.0/(1.0+sqrt(1.0-(rho*rho)));
     printf("Re = %f, omega = %f \n", Re, omega);
     resid = 0;
-    /*int k;
-    for(k=0; k<10; k++){
-        integrate_vorticity();
-    }*/
 
-    //sweep();
     visual_init(argc, argv);
     visual_launch();
-    //visual_set_texdata(Psi0);
-    
-   /* output=fopen("psi.txt", "w");
 
-    for(g = 0; g<N[0]*N[1]; g++)
-    {
-        if(g%N[0]==(N[0]-1)){
-            fprintf(output, "%f \n", Psi0[g]);
-        }else{
-            fprintf(output, "%f    ", Psi0[g]);
-        }
-        
-    }*/
-    
-    
 
     free(radius);
 
