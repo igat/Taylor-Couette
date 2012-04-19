@@ -1,6 +1,6 @@
 /* to run:
  
- gcc -Wall -o trialu trial_us.c -L/usr/X11/lib -lglut -lGLU -lGL -lXmu -lXext -lXi -lX11 -I/usr/X11/include
+ gcc -Wall -o timedep timedep.c -L/usr/X11/lib -lglut -lGLU -lGL -lXmu -lXext -lXi -lX11 -I/usr/X11/include
 
 */
 
@@ -332,7 +332,20 @@ void integrate_u(){
     
 }
 
-
+void save_data(){
+    output=fopen("u_phi.txt", "w");
+    int i, j, position;
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position = (i*N[1]) + j;
+            if(j==(N[1]/2)){
+                fprintf(output, "%f  %f  \n", radius[i], U_PHI[position]);
+            }
+        }
+        
+    }
+    fclose(output);
+}
 
 
 /*
@@ -397,7 +410,7 @@ int main(int argc, char **argv)
     
     const double nu = 0.1; //viscocity
     //Re = V_phi_outer*grid_spacing[1]/nu; //Reynolds number
-    Re = 10.0;
+    Re = 1.0;
     double rho;
     rho = cos(Pi/N[0]);
     omega= 2.0/(1.0+sqrt(1.0-(rho*rho)));
@@ -598,6 +611,9 @@ void KeyPressed(unsigned char key, int x, int y)
     }
     else if (key == 'p') {
         TextureMode = 'p';
+    }
+    else if (key == 's') {
+        save_data();
     }
     glutPostRedisplay();
 }

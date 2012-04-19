@@ -77,18 +77,18 @@ void find_s(double s){
 int main(int argc, char **argv)
 {
     
-    Rdim = 100;
+    Rdim = 60;
     double r1, r2;
-    r1 = 0.5;
-    r2 = 3.5;
+    r1 = 1.0;
+    r2 = 2.0;
     dr = (r2-r1)/Rdim;
     double omega;
     omega= 2.0;
     //V1 = r1*omega;
     //V2 = r2*omega;
     
-    V1 = -10.0;
-    V2 = 10.0;
+    V1 = 10.0;
+    V2 = 0.0;
     
     double s, s_old;
     
@@ -107,11 +107,11 @@ int main(int argc, char **argv)
 
     int i, g;
     for(i=0; i<max_iterations; i++){
-        if(u_phi[Rdim]==V2){
+        if(u_phi[Rdim-1]==V2){
             i=max_iterations;
         }else{
             s_old = s;
-            s = s_old - ((u_phi[Rdim] - V2)/U[Rdim]);
+            s = s_old - ((u_phi[Rdim-1] - V2)/U[Rdim-1]);
             //printf("s_old = %f, s_new = %f, u_phi[RDIM] = %f, U[rdim] = %f \n", s_old, s, u_phi[Rdim], U[Rdim]);
             find_s(s);
         }
@@ -119,11 +119,11 @@ int main(int argc, char **argv)
         //printf("s = %f, u_phi[Rdim] = %f \n", s, u_phi[Rdim]);
  
     }
-    printf("s = %f, u_phi[Rdim] = %f \n", s, u_phi[Rdim]);
+    printf("s = %f, u_phi[Rdim] = %f \n", s, u_phi[Rdim-1]);
     
     output=fopen("Uphi3.txt", "w");
     
-    for(g = 0; g<(Rdim+1); g++)
+    for(g = 0; g<(Rdim); g++)
     {
         fprintf(output, "%f  %f \n",radius[g], u_phi[g]);
         
