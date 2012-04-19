@@ -221,117 +221,6 @@ double d_pressure(double *u_phi, int position, int r_pos){
 }
 
 
-void integrate_u(){
-    double *ur1 = (double*) malloc(N[0]*N[1]*sizeof(double));
-    double *ur2 = (double*) malloc(N[0]*N[1]*sizeof(double));
-    double *ur3 = (double*) malloc(N[0]*N[1]*sizeof(double));
-    double *up1 = (double*) malloc(N[0]*N[1]*sizeof(double));
-    double *up2 = (double*) malloc(N[0]*N[1]*sizeof(double));
-    double *up3 = (double*) malloc(N[0]*N[1]*sizeof(double));
-    double L1r, L2r, L1phi, L2phi;
-
-    tSTEP = CFL*grid_spacing[0]/V_phi_inner;
-    //V_phi_inner += acceleration*tSTEP;
-    int i, j, position;
-    for(i=0; i<N[0]; i++){
-        for(j=0; j<N[1]; j++){
-            position = (i*N[1]) + j;
-            if(i==0){
-                ur1[position] = 0.0;
-                up1[position] = V_phi_inner;
-            }else if(i==(N[0]-1)){
-                ur1[position] = 0.0;
-                up1[position] = V_phi_outer;
-            }else{
-                L1r = -(Re*U_PHI[position]*U_PHI[position]/radius[i])+laplace(U_R, position,1, i) - (U_R[position]/(radius[i]*radius[i])) - (2.0*delta_phi(U_PHI, position, 2)/(radius[i]*radius[i]));
-                L2r = Re*(-(U_PHI[position]*U_PHI[position]/radius[i]) + (U_R[position]*delta_r(U_R, position, 1)) + (U_PHI[position]*delta_phi(U_R, position, 1)/radius[i]));
-                ur1[position] = U_R[position] + tSTEP*(L1r - L2r);
-                
-                L1phi = laplace(U_PHI, position, 2, i) + (2.0*delta_phi(U_R, position, 1)/(radius[i]*radius[i])) - (U_PHI[position]/(radius[i]*radius[i]));
-                L2phi = Re*((U_R[position]*delta_r(U_PHI, position, 2)) + (U_PHI[position]*delta_phi(U_PHI, position, 2)/radius[i]) + (U_PHI[position]*U_R[position]/radius[i]));
-                
-                
-                up1[position] = U_PHI[position] + tSTEP*(L1phi - L2phi);
-            }
-
-            
-            //printf("L1 = %f, L2 = %f \n",L1, L2);
-        }
-    }
-    //second integration now
-    for(i=0; i<N[0]; i++){
-        for(j=0; j<N[1]; j++){
-            position = (i*N[1]) + j;
-            if(i==0){
-                ur2[position] = 0.0;
-                up2[position] = V_phi_inner;
-            }else if(i==(N[0]-1)){
-                ur2[position] = 0.0;
-                up2[position] = V_phi_outer;
-            }else{
-                L1r = -(Re*up1[position]*up1[position]/radius[i])+laplace(ur1, position,1, i) - (ur1[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up1, position, 2)/(radius[i]*radius[i]));
-                L2r = Re*(-(up1[position]*up1[position]/radius[i]) + (ur1[position]*delta_r(ur1, position, 1)) + (up1[position]*delta_phi(ur1, position, 1)/radius[i]));
-                ur2[position] = ((3.0/4.0)*U_R[position]) + (ur1[position]/4.0) + (tSTEP*(L1r - L2r)/4.0);
-                
-                L1phi =laplace(up1, position, 2, i) + (2.0*delta_phi(ur1, position, 1)/(radius[i]*radius[i])) - (up1[position]/(radius[i]*radius[i]));
-                L2phi = Re*((ur1[position]*delta_r(up1, position, 2)) + (up1[position]*delta_phi(up1, position, 2)/radius[i]) + (up1[position]*ur1[position]/radius[i]));
-                
-                up2[position] = ((3.0/4.0)*U_PHI[position]) + (up1[position]/4.0) + (tSTEP*(L1phi - L2phi)/4.0);
-            }
-            
-            
-
-        }
-    }
-    //third integration
-    for(i=0; i<N[0]; i++){
-        for(j=0; j<N[1]; j++){
-            position = (i*N[1]) + j;
-            if(i==0){
-                ur3[position] = 0.0;
-                up3[position] = V_phi_inner;
-            }else if(i==(N[0]-1)){
-                ur3[position] = 0.0;
-                up3[position] = V_phi_outer;
-            }else{
-                L1r = -(Re*up2[position]*up2[position]/radius[i])+laplace(ur2, position,1, i) - (ur2[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up2, position, 2)/(radius[i]*radius[i]));
-                L2r = Re*(-(up2[position]*up2[position]/radius[i]) + (ur2[position]*delta_r(ur2, position, 1)) + (up2[position]*delta_phi(ur2, position, 1)/radius[i]));
-                ur3[position] = ((1.0/3.0)*U_R[position]) + (2.0*ur2[position]/3.0) + (2.0*tSTEP*(L1r - L2r)/3.0);
-                
-                L1phi = laplace(up2, position, 2, i) + (2.0*delta_phi(ur2, position, 1)/(radius[i]*radius[i])) - (up2[position]/(radius[i]*radius[i]));
-                L2phi = Re*((ur2[position]*delta_r(up2, position, 2)) + (up2[position]*delta_phi(up2, position, 2)/radius[i]) + (up2[position]*ur2[position]/radius[i]));
-                
-                up3[position] = ((1.0/3.0)*U_PHI[position]) + (2.0*up2[position]/3.0) + (2.0*tSTEP*(L1phi - L2phi)/3.0);
-            }
-            
-            
-           
-        }
-    }
-    for(i=0; i<N[0]; i++){
-        for(j=0; j<N[1]; j++){
-            position = (i*N[1]) + j;
-            U_R[position] = ur3[position];
-            U_PHI[position] = up3[position];
-        }
-    }
-    free(up3);
-    free(up2);
-    free(up1);
-    free(ur3);
-    free(ur2);
-    free(ur1);
-    time +=tSTEP;
-    printf("Current time = %f \n", time);
-    if (TextureMode == 'r') {
-        visual_set_texdata(U_R);
-    }
-    else if (TextureMode == 'p') {
-        visual_set_texdata(U_PHI);
-    }
-    
-}
-
 void save_data(){
     output=fopen("u_phi.txt", "w");
     int i, j, position;
@@ -347,6 +236,8 @@ void save_data(){
     fclose(output);
 }
 
+
+void integrate_u();
 
 /*
 void integration(){
@@ -367,8 +258,8 @@ int main(int argc, char **argv)
     CFL = 0.025;
     r1 = 1.0;
     r2 = 2.0;
-    N[0] = 60; // array size in each direction, N[0] = rdim
-    N[1] = 60; //N[1] = PhiDim
+    N[0] = 256; // array size in each direction, N[0] = rdim
+    N[1] = 256; //N[1] = PhiDim
     phi_1 = 0.0;
     phi_2 = 2.0*Pi;
     //phis go from phi = [0, 2pi]
@@ -616,4 +507,123 @@ void KeyPressed(unsigned char key, int x, int y)
         save_data();
     }
     glutPostRedisplay();
+}
+
+void integrate_u(){
+    double *ur1 = (double*) malloc(N[0]*N[1]*sizeof(double));
+    double *ur2 = (double*) malloc(N[0]*N[1]*sizeof(double));
+    double *ur3 = (double*) malloc(N[0]*N[1]*sizeof(double));
+    double *up1 = (double*) malloc(N[0]*N[1]*sizeof(double));
+    double *up2 = (double*) malloc(N[0]*N[1]*sizeof(double));
+    double *up3 = (double*) malloc(N[0]*N[1]*sizeof(double));
+    double L1r, L2r, L1phi, L2phi;
+    
+    tSTEP = CFL*grid_spacing[0]/V_phi_inner;
+    //V_phi_inner += acceleration*tSTEP;
+    int i, j, position;
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position = (i*N[1]) + j;
+            if(i==0){
+                ur1[position] = 0.0;
+                up1[position] = V_phi_inner;
+            }else if(i==(N[0]-1)){
+                ur1[position] = 0.0;
+                up1[position] = V_phi_outer;
+            }else{
+                L1r = -(Re*U_PHI[position]*U_PHI[position]/radius[i])+laplace(U_R, position,1, i) - (U_R[position]/(radius[i]*radius[i])) - (2.0*delta_phi(U_PHI, position, 2)/(radius[i]*radius[i]));
+                L2r = Re*(-(U_PHI[position]*U_PHI[position]/radius[i]) + (U_R[position]*delta_r(U_R, position, 1)) + (U_PHI[position]*delta_phi(U_R, position, 1)/radius[i]));
+                ur1[position] = U_R[position] + tSTEP*(L1r - L2r);
+                
+                L1phi = laplace(U_PHI, position, 2, i) + (2.0*delta_phi(U_R, position, 1)/(radius[i]*radius[i])) - (U_PHI[position]/(radius[i]*radius[i]));
+                L2phi = Re*((U_R[position]*delta_r(U_PHI, position, 2)) + (U_PHI[position]*delta_phi(U_PHI, position, 2)/radius[i]) + (U_PHI[position]*U_R[position]/radius[i]));
+                
+                
+                up1[position] = U_PHI[position] + tSTEP*(L1phi - L2phi);
+            }
+            
+            
+            //printf("L1 = %f, L2 = %f \n",L1, L2);
+        }
+    }
+    //second integration now
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position = (i*N[1]) + j;
+            if(i==0){
+                ur2[position] = 0.0;
+                up2[position] = V_phi_inner;
+            }else if(i==(N[0]-1)){
+                ur2[position] = 0.0;
+                up2[position] = V_phi_outer;
+            }else{
+                L1r = -(Re*up1[position]*up1[position]/radius[i])+laplace(ur1, position,1, i) - (ur1[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up1, position, 2)/(radius[i]*radius[i]));
+                L2r = Re*(-(up1[position]*up1[position]/radius[i]) + (ur1[position]*delta_r(ur1, position, 1)) + (up1[position]*delta_phi(ur1, position, 1)/radius[i]));
+                ur2[position] = ((3.0/4.0)*U_R[position]) + (ur1[position]/4.0) + (tSTEP*(L1r - L2r)/4.0);
+                
+                L1phi =laplace(up1, position, 2, i) + (2.0*delta_phi(ur1, position, 1)/(radius[i]*radius[i])) - (up1[position]/(radius[i]*radius[i]));
+                L2phi = Re*((ur1[position]*delta_r(up1, position, 2)) + (up1[position]*delta_phi(up1, position, 2)/radius[i]) + (up1[position]*ur1[position]/radius[i]));
+                
+                up2[position] = ((3.0/4.0)*U_PHI[position]) + (up1[position]/4.0) + (tSTEP*(L1phi - L2phi)/4.0);
+            }
+            
+            
+            
+        }
+    }
+    //third integration
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position = (i*N[1]) + j;
+            if(i==0){
+                ur3[position] = 0.0;
+                up3[position] = V_phi_inner;
+            }else if(i==(N[0]-1)){
+                ur3[position] = 0.0;
+                up3[position] = V_phi_outer;
+            }else{
+                L1r = -(Re*up2[position]*up2[position]/radius[i])+laplace(ur2, position,1, i) - (ur2[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up2, position, 2)/(radius[i]*radius[i]));
+                L2r = Re*(-(up2[position]*up2[position]/radius[i]) + (ur2[position]*delta_r(ur2, position, 1)) + (up2[position]*delta_phi(ur2, position, 1)/radius[i]));
+                ur3[position] = ((1.0/3.0)*U_R[position]) + (2.0*ur2[position]/3.0) + (2.0*tSTEP*(L1r - L2r)/3.0);
+                
+                L1phi = laplace(up2, position, 2, i) + (2.0*delta_phi(ur2, position, 1)/(radius[i]*radius[i])) - (up2[position]/(radius[i]*radius[i]));
+                L2phi = Re*((ur2[position]*delta_r(up2, position, 2)) + (up2[position]*delta_phi(up2, position, 2)/radius[i]) + (up2[position]*ur2[position]/radius[i]));
+                
+                up3[position] = ((1.0/3.0)*U_PHI[position]) + (2.0*up2[position]/3.0) + (2.0*tSTEP*(L1phi - L2phi)/3.0);
+            }
+            
+            
+            
+        }
+    }
+    double difference = 0.0;
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position = (i*N[1]) + j;
+            difference += fabs(U_PHI[position] - up3[position]);
+            U_R[position] = ur3[position];
+            U_PHI[position] = up3[position];
+        }
+    }
+    free(up3);
+    free(up2);
+    free(up1);
+    free(ur3);
+    free(ur2);
+    free(ur1);
+    time +=tSTEP;
+    printf("Current time = %f , difference = %E \n", time, difference);
+    if (TextureMode == 'r') {
+        visual_set_texdata(U_R);
+    }
+    else if (TextureMode == 'p') {
+        visual_set_texdata(U_PHI);
+    }
+    if(difference<=(1e-8)){
+        save_data();
+        glutDestroyWindow(WindowID);
+        exit(0);
+        
+    }
+    
 }

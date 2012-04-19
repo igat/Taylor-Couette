@@ -77,7 +77,7 @@ void find_s(double s){
 int main(int argc, char **argv)
 {
     
-    Rdim = 60;
+    Rdim = 256;
     double r1, r2;
     r1 = 1.0;
     r2 = 2.0;
