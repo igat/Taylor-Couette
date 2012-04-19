@@ -205,7 +205,6 @@ double laplace(double *w, int position, int r_or_phi, int r_pos){
 
 
 }*/
-
 double d_pressure(double *u_phi, int position, int r_pos){
     double value;
     if(position%N[1]==0){
@@ -255,7 +254,7 @@ void integration(){
 */
 int main(int argc, char **argv)
 {
-    CFL = 0.025;
+    CFL = 0.005;
     r1 = 1.0;
     r2 = 2.0;
     N[0] = 256; // array size in each direction, N[0] = rdim
