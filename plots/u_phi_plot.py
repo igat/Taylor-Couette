@@ -20,11 +20,11 @@ ax1.legend(loc = 'best')
 ax1.grid()
 ax1.set_xlabel('radius')
 ax1.set_ylabel(r'velocity, $U_{\phi}$')
-ax1.set_title(r'$U_{\phi}$ vs $r$ for 128x128')
+ax1.set_title(r'$U_{\phi}$ vs $r$ for 256x256')
 
 
 
-plt.savefig('u_phi_128x128')
+plt.savefig('u_phi_256x256')
 
 
 plt.show() 
