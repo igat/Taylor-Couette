@@ -1,3 +1,7 @@
+
+
+
+
 /* to run:
  
  gcc -Wall -o timedep timedep.c -L/usr/X11/lib -lglut -lGLU -lGL -lXmu -lXext -lXi -lX11 -I/usr/X11/include
