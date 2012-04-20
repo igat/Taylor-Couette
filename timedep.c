@@ -232,7 +232,7 @@ void relax_pressure(double *ur, double *uphi, int first_time){
                 }else if(i==(N[0]-1)){
                     Piminus1 = Pressure[position - N[1]];
                     Piminus1 = Piminus1;
-                    term1 = grid_spacing[1]*grid_spacing[1]*((Piplus1*2.0*radius[i]*radius[i]) + (Re*V_phi_inner*V_phi_inner*(grid_spacing[0] + radius[i])));
+                    term1 = grid_spacing[1]*grid_spacing[1]*((Piplus1*2.0*radius[i]*radius[i]) + (Re*V_phi_outer*V_phi_outer*(grid_spacing[0] + radius[i])));
                 }else{
                     Piminus1 = Pressure[position - N[1]];
                     Piplus1 = Pressure[position + N[1]];
