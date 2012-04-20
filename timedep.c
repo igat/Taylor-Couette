@@ -35,6 +35,7 @@ static double r1, r2;
 static int N[2];
 static double phi_1, phi_2;
 static double *U_R, *U_PHI;
+static double *d1uphi;
 //static double *Lr, *Lphi;
 static double grid_spacing[2];
 static double *radius;
@@ -57,13 +58,14 @@ void initialize_u(){
         radius[i] = r1 + (i*grid_spacing[0]);
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            if(i==0){
+            /*if(i==0){
                 U_PHI[position] = V_phi_inner;
             }else if(i==(N[0]-1)){
                 U_PHI[position] = V_phi_outer;
             }else{
                 U_PHI[position] = 0.0;
-            }
+            }*/
+            U_PHI[position] = d1uphi[i];
             U_R[position] = 0.0;
             //printf("Psi[%d] = %f\n", position, Psi0[position]);
             //printf("omega[%d] = %f\n", position, Omega0[position]);
@@ -239,6 +241,22 @@ void integration(){
     //visual_set_texdata(Psi0);
 }
 */
+void open_file(){
+    output2 = fopen("Uphi.txt", "rt");
+    char line[80];
+    int i=0;
+
+    while(fgets(line, 80, output2) !=NULL){
+        sscanf(line, "%lf",&d1uphi[i]);
+        
+        printf("%f, i=%d \n", d1uphi[i], i);
+        i+=1;
+    }
+    fclose(output2);
+    
+}
+
+
 int main(int argc, char **argv)
 {
     CFL = 0.025;
@@ -253,7 +271,9 @@ int main(int argc, char **argv)
     grid_spacing[1] = (phi_2 - phi_1)/N[1]; // grid spacing
     U_R  = (double*) malloc(N[0]*N[1]*sizeof(double));
     U_PHI  = (double*) malloc(N[0]*N[1]*sizeof(double));
+    d1uphi = (double*) malloc(N[0]*sizeof(double));
     //double turn_omega = 2.0;
+    open_file();
 
     
     V_phi_inner = 10.0;
