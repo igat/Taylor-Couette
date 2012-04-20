@@ -77,7 +77,7 @@ void find_s(double s){
 int main(int argc, char **argv)
 {
     
-    Rdim = 256;
+    Rdim = 32;
     double r1, r2;
     r1 = 1.0;
     r2 = 2.0;
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     }
     printf("s = %f, u_phi[Rdim] = %f \n", s, u_phi[Rdim-1]);
     
-    output=fopen("Uphi3.txt", "w");
+    output=fopen("Uphi32.txt", "w");
     
     for(g = 0; g<(Rdim); g++)
     {

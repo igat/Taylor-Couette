@@ -208,7 +208,7 @@ double laplace(double *w, int position, int r_or_phi, int r_pos){
 
 
 void save_data(){
-    output=fopen("u_phi.txt", "w");
+    output=fopen("u_phi32.txt", "w");
     int i, j, position;
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
@@ -241,11 +241,11 @@ void integration(){
 */
 int main(int argc, char **argv)
 {
-    CFL = 0.02;
+    CFL = 0.025;
     r1 = 1.0;
     r2 = 2.0;
-    N[0] = 256; // array size in each direction, N[0] = rdim
-    N[1] = 256; //N[1] = PhiDim
+    N[0] = 32; // array size in each direction, N[0] = rdim
+    N[1] = 32; //N[1] = PhiDim
     phi_1 = 0.0;
     phi_2 = 2.0*Pi;
     //phis go from phi = [0, 2pi]
