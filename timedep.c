@@ -23,7 +23,7 @@
 
 
 #define Pi (4.0*atan(1.0))
-#define max_iterations 500
+#define max_iterations 800
 #define max_iterations1 10
 
 
@@ -156,14 +156,14 @@ double delta_r(double *w, int position, int r_or_phi){
     double value;
     if(position<=(N[1]-1)){     //reflecting boundary
         if(r_or_phi==3){
-            value = Re*V_phi_inner*V_phi_inner/r1; 
+            value = -1.0*Re*V_phi_inner*V_phi_inner/r1; 
         }else{
             value = 0.0;
         }
         //value = (2.0*w[position + N[1]])/(grid_spacing[0]);
     }else if(position>=((N[0]-1)*N[1])){        //reflecting boundary everywhere
         if(r_or_phi==3){
-            value = Re*V_phi_outer*V_phi_outer/r2; 
+            value = -1.0*Re*V_phi_outer*V_phi_outer/r2; 
         }else{
             value = 0.0;
         }
@@ -172,6 +172,8 @@ double delta_r(double *w, int position, int r_or_phi){
     }else{
         value = (w[position + N[1]] - w[position-N[1]])/(grid_spacing[0]); 
     }
+    double check = Re*U_PHI[position]*U_PHI[position]/radius[position/N[1]];
+    //if(r_or_phi==3) printf("derivative here = %f , position = %d, %d and check = %f \n", value, position,position/N[1], check);
     return value;
 }
 
@@ -206,7 +208,7 @@ void relax_pressure(double *ur, double *uphi, int first_time){
                 }else{
                     source = (2.0*Re/radius[i])*((delta_phi(uphi,position, 2)*(delta_r(ur,position, 1) - (ur[position]/(2.0*radius[i])))) + (delta_phi(ur, position, 1)*((uphi[position]/(2.0*radius[i])) - delta_r(uphi, position, 2))));
                     
-                    residual1 = (delta_r(Pressure, position, 3)/radius[i]) + delta_r2(Pressure, position, 3) + (delta_phi2(Pressure, position, 3)/(radius[i]*radius[i]))-(source);
+                    residual1 = (-delta_r(Pressure, position, 3)/radius[i]) + delta_r2(Pressure, position, 3) + (delta_phi2(Pressure, position, 3)/(radius[i]*radius[i]))-(source);
                     //should i hard code dp/dr = Re*uphi^2/r?
                     e_ij = 2.0*((1.0/(grid_spacing[0]*grid_spacing[0])) + (1.0/(radius[i]*radius[i]*grid_spacing[1]*grid_spacing[1])) );
                     pressure_new[position] = Pressure[position] + (omega*residual1/e_ij);
@@ -222,8 +224,8 @@ void relax_pressure(double *ur, double *uphi, int first_time){
                     resid_sum += fabs(residual1);
                 }*/
                 
-                //source = 2.0*Re*((delta_r(uphi, position, 2)*((uphi[position]/radius[i]) - (delta_phi(ur, position, 1)/radius[i]))) + (delta_phi(uphi, position, 2)*((delta_r(ur, position, 1)/radius[i]) - (ur[position]/(radius[i]*radius[i])))) - (uphi[position]*uphi[position]/(2.0*radius[i]*radius[i])));
-                source = (2.0*Re/radius[i])*((delta_phi(uphi,position, 2)*(delta_r(ur,position, 1) - (ur[position]/(2.0*radius[i])))) + (delta_phi(ur, position, 1)*((uphi[position]/(2.0*radius[i])) - delta_r(uphi, position, 2))));
+                source = 2.0*Re*((delta_r(uphi, position, 2)*((uphi[position]/radius[i]) - (delta_phi(ur, position, 1)/radius[i]))) + (delta_phi(uphi, position, 2)*((delta_r(ur, position, 1)/radius[i]) - (ur[position]/(radius[i]*radius[i])))) - (uphi[position]*uphi[position]/(2.0*radius[i]*radius[i])));
+                //source = (2.0*Re/radius[i])*((delta_phi(uphi,position, 2)*(delta_r(ur,position, 1) - (ur[position]/(2.0*radius[i])))) + (delta_phi(ur, position, 1)*((uphi[position]/(2.0*radius[i])) - delta_r(uphi, position, 2))));
                 
                 if(i==0){
                     Piplus1 = Pressure[position + N[1]];
@@ -281,6 +283,15 @@ void relax_pressure(double *ur, double *uphi, int first_time){
     }
     printf("residual here = %E, resid = %d\n", residual[resid-1], resid);
     printf("Check!, Pressure[10] - Pressure[9] = %f\n",Pressure[10] - Pressure[9]);
+    int i, j, position;
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position = (i*N[1]) + j;
+            if(j==(N[1]/2)){
+                printf("Pressure[%d] = %f \n",position, Pressure[position]);
+            }
+        }
+    }
 
 
 }
@@ -334,7 +345,7 @@ void open_file(){
 
 int main(int argc, char **argv)
 {
-    CFL = 0.02;
+    CFL = 0.025;
     r1 = 1.0;
     r2 = 2.0;
     N[0] = 60; // array size in each direction, N[0] = rdim
