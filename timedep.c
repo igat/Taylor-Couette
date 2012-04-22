@@ -23,7 +23,7 @@
 
 
 #define Pi (4.0*atan(1.0))
-#define max_iterations 1000
+#define max_iterations 800
 #define max_iterations1 10
 
 
@@ -131,8 +131,6 @@ double delta_r2(double *w, int position, int r_or_phi){
         //printf("at boundary condition (less than n1-1) for r2. position = %d \n", position);
         if(r_or_phi==3){
             value = -(2.0*w[position])/(grid_spacing[0]*grid_spacing[0]);
-        }else if(r_or_phi==1){
-            value = 0.0;
         }else{
             //value = (2.0*w[position+N[1]])/(grid_spacing[0]*grid_spacing[0]);
             value = -(2.0*w[position])/(grid_spacing[0]*grid_spacing[0]); 
@@ -141,8 +139,6 @@ double delta_r2(double *w, int position, int r_or_phi){
         //printf("at boundary condition (greater than n0-1*n1) for r2. position = %d \n", position);
         if(r_or_phi==3){    //for r
             value = -(2.0*w[position])/(grid_spacing[0]*grid_spacing[0]); 
-        }else if(r_or_phi==1){
-            value = 0.0;
         }else{
             //value = (2.0*w[position+N[1]])/(grid_spacing[0]*grid_spacing[0]);
             value = -(2.0*w[position])/(grid_spacing[0]*grid_spacing[0]);
@@ -270,7 +266,7 @@ void relax_pressure(double *ur, double *uphi, int first_time){
                 
                 if(i==0){
                     Piplus1 = Pressure[position + N[1]];
-                    Piminus1 = fabs(Piplus1);
+                    Piminus1 = -fabs(Piplus1);
                     //term1 = grid_spacing[1]*grid_spacing[1]*((Piplus1*2.0*radius[i]*radius[i]) + (Re*V_phi_inner*V_phi_inner*grid_spacing[0]*grid_spacing[0]));
                     //term1 = (Re*V_phi_inner*V_phi_inner*grid_spacing[1]*grid_spacing[1]*grid_spacing[0]*grid_spacing[0]);
                     //pressure_new[position] = ((1.0 - omega)*Pressure[position]) + (omega*(Pressure[position + N[1]] + (Re*grid_spacing[0]*grid_spacing[0]*V_phi_inner*V_phi_inner/(2.0*radius[i]*radius[i]))));    
@@ -278,7 +274,7 @@ void relax_pressure(double *ur, double *uphi, int first_time){
    
                 }else if(i==(N[0]-1)){
                     Piminus1 = Pressure[position - N[1]];
-                    Piplus1 = -fabs(Piminus1);
+                    Piplus1 = fabs(Piminus1);
                     //term1 = grid_spacing[1]*grid_spacing[1]*((Piminus1*2.0*radius[i]*radius[i]) + (Re*V_phi_outer*V_phi_outer*grid_spacing[0]*grid_spacing[0]));
                     //term1 = grid_spacing[1]*grid_spacing[1]*((Re*V_phi_outer*V_phi_outer*grid_spacing[0]*grid_spacing[0]));
                     //pressure_new[position] = ((1.0 - omega)*Pressure[position]) + (omega*(Pressure[position - N[1]] + (Re*grid_spacing[0]*grid_spacing[0]*V_phi_outer*V_phi_outer/(2.0*radius[i]*radius[i]))));  
@@ -311,8 +307,10 @@ void relax_pressure(double *ur, double *uphi, int first_time){
 
                 pressure_new[position] = ((1.0 - omega)*Pressure[position]) - value;
                 resid_sum += fabs(residual1);
-
+                
                 Pressure[position] = pressure_new[position];
+
+                
                 //if(resid==799) printf("term1 = %f, term2 = %f, term3 = %f, value = %f \n", term1, term2, term3, value);
 
             }
@@ -417,8 +415,8 @@ int main(int argc, char **argv)
     open_file();
 
     
-    V_phi_inner = 0.0;
-    V_phi_outer = 10.0;
+    V_phi_inner = 10.0;
+    V_phi_outer = 0.0;
     time = 0.0;
     /* --fix these!!!
      Boundary conditions:
