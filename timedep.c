@@ -96,21 +96,11 @@ double delta_phi2(double *w, int position, int r_or_phi){
 double delta_r2(double *w, int position, int r_or_phi){
     double value;
     if(position<=(N[1]-1)){     //reflecting boundary
-        //printf("at boundary condition (less than n1-1) for r2. position = %d \n", position);
-        if(r_or_phi==1){
-            value = ((2.0*w[position+N[1]])-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]);
-        }else{
-            //value = (2.0*w[position+N[1]])/(grid_spacing[0]*grid_spacing[0]);
-            value = ((2.0*w[position+N[1]])-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]); //maybe? bc first derivative is zero.
-        }
+        value = (-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]);
     }else if(position>=((N[0]-1)*N[1])){        //reflecting boundary
         //printf("at boundary condition (greater than n0-1*n1) for r2. position = %d \n", position);
-        if(r_or_phi==1){    //for r
-            value = ((2.0*w[position-N[1]])-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]); 
-        }else{
-            //value = (2.0*w[position+N[1]])/(grid_spacing[0]*grid_spacing[0]);
-            value = ((2.0*w[position-N[1]])-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]);
-        }
+        value = (-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]);
+
     }else{
         value = (w[position + N[1]] + w[position-N[1]] - (2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]); 
     }
@@ -132,18 +122,12 @@ double delta_phi(double *w, int position, int r_or_phi){
 double delta_r(double *w, int position, int r_or_phi){
     double value;
     if(position<=(N[1]-1)){     //reflecting boundary
-        if(r_or_phi==1){
-            value = 0.0; 
-        }else{
-            value = 0.0;
-        }
+        value = (2.0*w[position + N[1]])/(grid_spacing[0]);
+
         //value = (2.0*w[position + N[1]])/(grid_spacing[0]);
     }else if(position>=((N[0]-1)*N[1])){        //reflecting boundary everywhere
-        if(r_or_phi==1){
-            value = 0.0; 
-        }else{
-            value = 0.0;
-        }
+        value = ( - 2.0*w[position-N[1]])/(grid_spacing[0]); 
+
         //value = (2.0*w[position-N[1]])/(grid_spacing[0]); 
         //value = 0.0;
     }else{
@@ -157,58 +141,6 @@ double laplace(double *w, int position, int r_or_phi, int r_pos){
     value = (delta_r(w, position, r_or_phi)/radius[r_pos])+ delta_r2(w, position, r_or_phi) + (delta_phi2(w, position, r_or_phi)/(radius[r_pos]*radius[r_pos]));
     return value;
 }
-
-/*void relax_psi(double *w){
-    const double EPS = 1.0e-6;
-    double resid_sum;
-    for(resid=0; resid<max_iterations; resid++){
-        double *psi_new = (double*) malloc(N[0]*N[1]*sizeof(double));
-        double residual1, e_ij;
-        int i, j, position;
-        resid_sum = 0.0;
-        for(i=0; i<N[0]; i++){
-            for(j=0; j<N[1]; j++){
-                position = (i*N[1]) + j;
-                residual1 = (delta_r(Psi0, position, 1)/radius[i]) + delta_r2(Psi0, position, 1) + (delta_phi2(Psi0, position, 1)/(radius[i]*radius[i]))-(w[position]/omega);
-                e_ij = 2.0*((1.0/(grid_spacing[0]*grid_spacing[0])) + (1.0/(radius[i]*radius[i]*grid_spacing[1]*grid_spacing[1])) );
-
-                if(i==0){
-                    psi_new[position] = Psi0[position] + (acceleration*tSTEP*radius[i]);
-                    residual1 = 0.0;
-                }else{
-                    residual1 = (delta_r(Psi0, position, 1)/radius[i]) + delta_r2(Psi0, position, 1) + (delta_phi2(Psi0, position, 1)/(radius[i]*radius[i]))-(w[position]/omega);
-                    e_ij = 2.0*((1.0/(grid_spacing[0]*grid_spacing[0])) + (1.0/(radius[i]*radius[i]*grid_spacing[1]*grid_spacing[1])) );
-                    psi_new[position] = Psi0[position] + (omega*residual1/e_ij);
-                }
-                //psi_new[position] = Psi0[position] + (omega*residual1/e_ij);
-                Psi0[position] = psi_new[position];
-                resid_sum += fabs(residual1);
-                
-            }
-        }
-        //printf("residual here = %E, resid = %d \n", resid_sum, resid);
-        residual[resid] = resid_sum/(N[0]*N[1]);
-        free(psi_new);
-        //if(resid=10) printf("residual here = %E, eps = %E \n", residual[resid], EPS);
-        if(resid>=2){
-            double value1 = residual[1]*EPS;
-            //printf("value1 = %E \n", value1);
-            if(residual[resid]<=value1){
-                residual[max_iterations-1] = residual[resid];
-                printf("here!! residual here = %E, resid = %d \n", residual[resid], resid);
-                resid = max_iterations;
-                
-            
-            }
-        }
-        resid_sum = 0.0;
-    }
-    printf("residual here = %E, resid = %d \n", residual[resid-1], resid);
-
-
-}*/
-
-
 void save_data(){
     output=fopen("u_phi32.txt", "w");
     int i, j, position;
