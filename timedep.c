@@ -191,11 +191,11 @@ void open_file(){
 
 int main(int argc, char **argv)
 {
-    CFL = 0.025;
+    CFL = 0.005;
     r1 = 1.0;
     r2 = 2.0;
-    N[0] = 32; // array size in each direction, N[0] = rdim
-    N[1] = 32; //N[1] = PhiDim
+    N[0] = 100; // array size in each direction, N[0] = rdim
+    N[1] = 100; //N[1] = PhiDim
     phi_1 = 0.0;
     phi_2 = 2.0*Pi;
     //phis go from phi = [0, 2pi]
@@ -208,8 +208,8 @@ int main(int argc, char **argv)
     open_file();
 
     
-    V_phi_inner = 10.0;
-    V_phi_outer = 0.0;
+    V_phi_inner = 0.0;
+    V_phi_outer = 10.0;
     time = 0.0;
     /* --fix these!!!
      Boundary conditions:
@@ -425,8 +425,9 @@ void integrate_u(){
     double *up2 = (double*) malloc(N[0]*N[1]*sizeof(double));
     double *up3 = (double*) malloc(N[0]*N[1]*sizeof(double));
     double L1r, L2r, L1phi, L2phi;
-    
-    tSTEP = CFL*grid_spacing[0]/V_phi_inner;
+
+
+    tSTEP = CFL*grid_spacing[0]/V_phi_outer;
     //V_phi_inner += acceleration*tSTEP;
     int i, j, position;
     for(i=0; i<N[0]; i++){
