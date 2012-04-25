@@ -21,6 +21,7 @@ static double *d1uphi, *uphi_new, *source, *radius;
 static double Wi, Wo, Re, r1, r2;
 static double grid_spacing[2];
 static int P_size;
+static double Pinner, Pouter;
 
 
 void open_file(){
@@ -44,10 +45,12 @@ void fill_source(){
     for(i=0; i<(P_size+2); i++){
         radius[i] = r1 + ((i-1)*grid_spacing[0]);
         if(i==0){
-            source[i] = (2.0*radius[i]*Re*Wi*Wi);
+            //source[i] = (2.0*radius[i]*Re*Wi*Wi);
+            source[i] = Pinner;
         }else if(i==(P_size+1)){
             //source[i] = radius[i]*Re*Wo*Wo;
-            source[i] = 0.0;
+            //source[i] = 0.0;
+            source[i] = Pouter;
         }/*else if(i==1){ //this could be sketchy, not quite sure if this is the right thing to do.
             source[i] = Re*(d1uphi[i-1]/(radius));
         }else if(i==P_size){
@@ -86,6 +89,8 @@ int main()
     const int N = 102;
     P_size = 100;
     int i, j;
+    Pinner = 1.0;
+    Pouter = 1.0;
     
     d1uphi = (double*) malloc(P_size*sizeof(double));
     uphi_new = (double*) malloc(P_size*sizeof(double));
@@ -188,9 +193,11 @@ int main()
         
         if(i==0){
             //cs_entry(triplet, i, i, a);
-            cs_entry(triplet, i, i+1, e+a);
+            cs_entry(triplet, i, i, 1);
+            //cs_entry(triplet, i, i+1, e+a);
         }else if(i==(M-1)){
-            cs_entry(triplet, i, i-1, a+e);
+            cs_entry(triplet, i, i, 1);
+            //cs_entry(triplet, i, i-1, a+e);
             //cs_entry(triplet, i, i, e);
         }else{
             cs_entry(triplet, i, i-1, a);
