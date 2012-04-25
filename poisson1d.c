@@ -38,6 +38,17 @@ void open_file(){
     
 }
 
+double delta_r(int position){
+    double value;
+    if(position==1){     //reflecting boundary
+        value = (2.0*d1uphi[position])/(grid_spacing[0]);
+    }else if(position==(P_size)){        //reflecting boundary everywhere
+        value = (-2.0*d1uphi[position-2])/(grid_spacing[0]); 
+    }else{
+        value = (d1uphi[position] - d1uphi[position-2])/(grid_spacing[0]); 
+    }
+    return value;
+}
 
 void fill_source(){
     int i;
@@ -51,7 +62,7 @@ void fill_source(){
             //source[i] = 0.0;
             source[i] = Pouter;
         }else{
-            source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
+            source[i] = Re*d1uphi[i-1]*delta_r(i)/radius[i];
         }
         //printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[i]);
 
@@ -85,10 +96,12 @@ void sparse(){
     
     
     for (i=0; i<M; i++) {
-        double a, e;
-        
-        a = 1.0/grid_spacing[0];
-        e = -a;
+        double a, c, e;
+        double deltar2 = 1.0/(grid_spacing[0]*grid_spacing[0]);
+        double deltar_r = 1.0/(radius[i]*grid_spacing[0]);
+        a = deltar2 - deltar_r;
+        c = -2.0*deltar2;
+        e = deltar2 + deltar_r;
         
         
         if(i==0){
@@ -97,6 +110,7 @@ void sparse(){
             cs_entry(triplet, i, i, 1.0);
         }else{
             cs_entry(triplet, i, i-1, a);
+            cs_entry(triplet, i, i, c);
             cs_entry(triplet, i, i+1, e);
         }
         
