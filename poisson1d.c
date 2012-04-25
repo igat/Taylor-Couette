@@ -53,7 +53,7 @@ void fill_source(){
         }else{
             source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }
-        printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[i]);
+        //printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[i]);
 
     }
     
@@ -64,7 +64,7 @@ void finite_difference(){
     for(i=0; i<P_size; i++){
         double value = radius[i+1]*(fabs(source[i+2] - source[i]))/(grid_spacing[0]*Re);
         uphi_new[i] = sqrt(value);
-        printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
+        //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
 
 }
@@ -130,7 +130,7 @@ int main()
     //Pinner = 1.0;
     //Pouter = -10.337;
     
-    Pinner = 10.0;
+    Pinner = -10.0;
     Pouter = 10.0;
     
     d1uphi = (double*) malloc(P_size*sizeof(double));
@@ -142,7 +142,7 @@ int main()
     
     open_file();
     Re = 1.0;
-    Wi = 10.0;
+    Wi = 5.0;
     Wo = 0.0;
     r1 = 1.0;
     r2 = 2.0;
@@ -154,17 +154,36 @@ int main()
     fill_source();
     
     sparce();
-    if(source[0]>source[1] || source[P_size+1]>source[P_size]){
-        if(source[0]>source[1]){
-            Pinner = source[1];
+    
+    if(Wi>Wo){
+        if(source[0]>source[1] || source[P_size+1]>source[P_size]){
+            if(source[0]>source[1]){
+                Pinner = source[1];
+            }
+            
+            if(source[P_size+1]>source[P_size]){
+                Pouter = source[P_size];
+            }
+            fill_source();
+            sparce();
+            
         }
-        
-        if(source[P_size+1]>source[P_size]){
-            Pouter = source[P_size];
+    }else{
+        printf("here, Wi = %f, Wo = %f \n", Wi, Wo);
+        if(source[0]<source[1] || source[P_size+1]<source[P_size]){
+            printf("source[0] = %f, source[1] = %f, source[P+1] = %f, souce[P] = %f \n", source[0], source[1], source[P_size+1] , source[P_size]);
+            if(source[0]<source[1]){
+                Pinner = source[1];
+            }
+            
+            if(source[P_size+1]<source[P_size]){
+                Pouter = source[P_size];
+            }
+            fill_source();
+            sparce();
         }
-        fill_source();
-        sparce();
     }
+    
 
 
     // Print the solution vector.
