@@ -59,11 +59,17 @@ int main()
         //printf("%d \n", i);
         double a, b, c, d, e;
         double radius = r1 + ((i-1)*grid_spacing[0]);
-        a = grid_spacing[1]*grid_spacing[1]*radius*(radius - grid_spacing[0]);
-        b = grid_spacing[0]*grid_spacing[0];
-        c = -2.0*((grid_spacing[1]*grid_spacing[1]*radius*radius) + (grid_spacing[0]*grid_spacing[0]));
+        //a = grid_spacing[1]*grid_spacing[1]*radius*(radius - grid_spacing[0]);
+        //b = grid_spacing[0]*grid_spacing[0];
+        //c = -2.0*((grid_spacing[1]*grid_spacing[1]*radius*radius) + (grid_spacing[0]*grid_spacing[0]));
+        //d = b;
+        //e = grid_spacing[1]*grid_spacing[1]*radius*(radius + grid_spacing[0]);
+        a = (1.0/(grid_spacing[0]*grid_spacing[0])) - (1.0/(radius*grid_spacing[0]));
+        b = 1.0/(radius*radius*grid_spacing[1]*grid_spacing[1]);
+        c = -2.0*((1.0/(grid_spacing[0]*grid_spacing[0])) + (1.0/(radius*radius*grid_spacing[1]*grid_spacing[1])));
         d = b;
-        e = grid_spacing[1]*grid_spacing[1]*radius*(radius + grid_spacing[0]);
+        e = (1.0/(grid_spacing[0]*grid_spacing[0])) +(1.0/(radius*grid_spacing[0]));
+        
         if(i<=(P_size)){
             cs_entry(triplet,i, 0, a);
             matrix2[(i*N)] = a;
@@ -104,11 +110,14 @@ int main()
     
     // Declare and initialize the array of coefficients, 'b'.
     double *b = (double*) malloc(N*sizeof(double));
-    double inner = 0.5;
-    double outer =  1.5;
+    double inner = 15.0;
+    double outer =  -15.0;
     b[0] = inner;
     b[N-1] = outer;
     for (i=1; i<N-1; ++i) {
+        //double radius = r1 + ((i-1)*grid_spacing[0]);
+        //double coeffic = grid_spacing[0]*grid_spacing[0]*grid_spacing[1]*grid_spacing[1]*radius*radius;
+        
         if((i-1)%P_size==0){
             b[i] = inner;
         }else if(i%P_size==0){

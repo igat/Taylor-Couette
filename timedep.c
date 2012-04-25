@@ -208,8 +208,8 @@ int main(int argc, char **argv)
     open_file();
 
     
-    V_phi_inner = 0.0;
-    V_phi_outer = 10.0;
+    V_phi_inner = 10.0;
+    V_phi_outer = 0.0;
     time = 0.0;
     /* --fix these!!!
      Boundary conditions:
