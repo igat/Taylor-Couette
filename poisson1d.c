@@ -71,7 +71,7 @@ void finite_difference(){
 
 
 
-void sparce(){
+void sparse(){
     
     const int M = 102;
     const int N = 102;
@@ -153,7 +153,7 @@ int main()
     
     fill_source();
     
-    sparce();
+    sparse();
     
     if(Wi>Wo){
         if(source[0]>source[1] || source[P_size+1]>source[P_size]){
@@ -165,7 +165,7 @@ int main()
                 Pouter = source[P_size];
             }
             fill_source();
-            sparce();
+            sparse();
             
         }
     }else{
@@ -180,7 +180,7 @@ int main()
                 Pouter = source[P_size];
             }
             fill_source();
-            sparce();
+            sparse();
         }
     }
     
