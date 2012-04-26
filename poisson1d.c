@@ -37,6 +37,12 @@ void open_file(){
     fclose(output2);
     
 }
+void set_radius(){
+    int i;
+    for(i=0; i<(P_size+2); i++){
+        radius[i] = r1 + ((i-1)*grid_spacing[0]);
+    }
+}
 
 
 void fill_source(){
@@ -45,12 +51,15 @@ void fill_source(){
         //radius[i] = r1 + ((i-1)*grid_spacing[0]);
         if(i==0){
             //source[i] = (2.0*radius[i]*Re*Wi*Wi);
-            source[i] = Re*radius[i+1]*Wi*Wi;
+            //source[i] = Re*radius[i+1]*Wi*Wi;
+            //source[i] = Re*d1uphi[i]*d1uphi[i]/radius[i+1];
+            source[i] = 25.0;
         }else if(i==(P_size+1)){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
             //source[i] = Pouter;
-            source[i] = Re*radius[i-1]*Wo*Wo;
+            //source[i] = Re*radius[i-1]*Wo*Wo;
+            source[i] = Re*d1uphi[i-2]*d1uphi[i-2]/radius[i-1];
         }else{
             source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }
@@ -63,7 +72,7 @@ void fill_source(){
 void finite_difference(){
     int i;
     for(i=0; i<P_size; i++){
-        double value = radius[i+1]*(fabs(source[i+2] - source[i]))/(grid_spacing[0]*Re);
+        double value = radius[i+1]*((source[i+2] - source[i]))/(grid_spacing[0]*Re);
         uphi_new[i] = sqrt(value);
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
@@ -89,19 +98,19 @@ void sparse(){
         double a, e;
         
         a = 1.0/grid_spacing[0];
-        e = -a;
+        e = -1.0*a;
         
         
         if(i==0){
-            cs_entry(triplet, i, i, e);
-            cs_entry(triplet, i, i+2, a);
+            //cs_entry(triplet, i, i, e);
+            //cs_entry(triplet, i, i+2, a);
+            cs_entry(triplet, i, i, 1.0);
         }else if(i==(M-1)){
             cs_entry(triplet, i, i, a);
             cs_entry(triplet, i, i-2, e);
-
         }else{
-            cs_entry(triplet, i, i-1, a);
-            cs_entry(triplet, i, i+1, e);
+            cs_entry(triplet, i, i-1, e);
+            cs_entry(triplet, i, i+1, a);
         }
         
         
@@ -136,6 +145,13 @@ int main()
     
     Pinner = -10.0;
     Pouter = 10.0;
+    Re = 1.0;
+    Wi = 5.0;
+    Wo = 5.0;
+    r1 = 1.0;
+    r2 = 2.0;
+    grid_spacing[0] = (r2-r1)/P_size;
+    grid_spacing[1] = (2.0*Pi)/P_size;
     
     d1uphi = (double*) malloc(P_size*sizeof(double));
     uphi_new = (double*) malloc(P_size*sizeof(double));
@@ -143,17 +159,12 @@ int main()
 
 
     source = (double*) malloc((P_size+2)*sizeof(double));
-    
+    set_radius();
     open_file();
-    Re = 1.0;
-    Wi = 5.0;
-    Wo = 5.0;
-    r1 = 1.0;
-    r2 = 2.0;
+
     
     
-    grid_spacing[0] = (r2-r1)/P_size;
-    grid_spacing[1] = (2.0*Pi)/P_size;
+
     
     fill_source();
     
