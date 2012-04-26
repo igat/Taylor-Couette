@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     //V2 = r2*omega;
     
     V1 = 5.0;
-    V2 = 0.0;
+    V2 = 10.0;
     
     double s, s_old;
     
@@ -107,11 +107,11 @@ int main(int argc, char **argv)
 
     int i, g;
     for(i=0; i<max_iterations; i++){
-        if(u_phi[Rdim-1]==V2){
+        if(u_phi[Rdim]==V2){
             i=max_iterations;
         }else{
             s_old = s;
-            s = s_old - ((u_phi[Rdim-1] - V2)/U[Rdim-1]);
+            s = s_old - ((u_phi[Rdim] - V2)/U[Rdim]);
             //printf("s_old = %f, s_new = %f, u_phi[RDIM] = %f, U[rdim] = %f \n", s_old, s, u_phi[Rdim], U[Rdim]);
             find_s(s);
         }
@@ -125,6 +125,7 @@ int main(int argc, char **argv)
     
     for(g = 0; g<(Rdim); g++)
     {
+        //printf("radius[%d] = %f \n", g, radius[g]);
         fprintf(output, "%f \n", u_phi[g]);
         
     }

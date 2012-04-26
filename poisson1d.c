@@ -41,30 +41,60 @@ void open_file(){
 double delta_r(int position){
     double value;
     if(position==1){     //reflecting boundary
-        value = (2.0*d1uphi[position])/(grid_spacing[0]);
+        value = (d1uphi[position] - (radius[position-1]*Wi))/(grid_spacing[0]);
+        //value = Wi;
+        //value = (2.0*d1uphi[position])/(grid_spacing[0]);
     }else if(position==(P_size)){        //reflecting boundary everywhere
-        value = (-2.0*d1uphi[position-2])/(grid_spacing[0]); 
+        value = ((radius[position+1]*Wo) - d1uphi[position-2])/(grid_spacing[0]); 
+        //value = Wo;
+        //value = -2.0*d1uphi[position-2]/(grid_spacing[0]); 
     }else{
         value = (d1uphi[position] - d1uphi[position-2])/(grid_spacing[0]); 
     }
+    printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
     return value;
+}
+/*
+double delta_r(int position){
+    double value;
+    if(position==1){     //reflecting boundary
+        value = ((radius[position + 1]*d1uphi[position]) - (radius[position-1]*radius[position-1]*Wi))/(radius[position]*grid_spacing[0]);
+        //value = Wi;
+    }else if(position==(P_size)){        //reflecting boundary everywhere
+        value = ((radius[position+1]*radius[position+1]*Wo) - (radius[position-1]*d1uphi[position-2]))/(radius[position]*grid_spacing[0]); 
+        //value = Wo;
+    }else{
+        value = ((radius[position + 1]*d1uphi[position]) - (radius[position-1]*d1uphi[position-2]))/(radius[position]*grid_spacing[0]); 
+    }
+    printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
+    return value;
+}*/
+
+
+
+void set_radius(){
+    int i;
+    for(i=0; i<(P_size+2); i++){
+        radius[i] = r1 + ((i-1)*grid_spacing[0]);
+    }
 }
 
 void fill_source(){
     int i;
     for(i=0; i<(P_size+2); i++){
-        radius[i] = r1 + ((i-1)*grid_spacing[0]);
+        
         if(i==0){
             //source[i] = (2.0*radius[i]*Re*Wi*Wi);
-            source[i] = Pinner;
+            //source[i] = Pinner;
+            source[i] = Re*radius[i+1]*Wi*Wi;
         }else if(i==(P_size+1)){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
-            source[i] = Pouter;
+            source[i] = Re*radius[i-1]*Wo*Wo;
         }else{
-            source[i] = Re*d1uphi[i-1]*delta_r(i)/radius[i];
+            source[i] = 2.0*Re*d1uphi[i-1]*delta_r(i)/radius[i];
         }
-        //printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[i]);
+        printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[i]);
 
     }
     
@@ -73,7 +103,7 @@ void fill_source(){
 void finite_difference(){
     int i;
     for(i=0; i<P_size; i++){
-        double value = radius[i+1]*(fabs(source[i+2] - source[i]))/(grid_spacing[0]*Re);
+        double value = radius[i+1]*((source[i+2] - source[i]))/(grid_spacing[0]*Re);
         uphi_new[i] = sqrt(value);
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
@@ -88,7 +118,7 @@ void sparse(){
     const int N = 102;
     int i;
     // Declare an MxN matrix which can hold up to three band-diagonals.
-    struct cs_sparse *triplet = cs_spalloc(M, N, 3*N, 1, 1);
+    struct cs_sparse *triplet = cs_spalloc(M, N, 5*N, 1, 1);
     
     
     // Fill the diagonal, and the band above and below the diagonal with some
@@ -96,18 +126,28 @@ void sparse(){
     
     
     for (i=0; i<M; i++) {
-        double a, c, e;
+        double a, c, e, d, b;
         double deltar2 = 1.0/(grid_spacing[0]*grid_spacing[0]);
         double deltar_r = 1.0/(radius[i]*grid_spacing[0]);
-        a = deltar2 - deltar_r;
+        a = (deltar2 - deltar_r)*radius[i-1]/radius[i];
         c = -2.0*deltar2;
-        e = deltar2 + deltar_r;
-        
+        e = (deltar2 + deltar_r)*radius[i+1]/radius[i];
+        //d = 1.0/grid_spacing[0];
+        //b = -1.0*d;
+        d = radius[i+2]/(radius[i+1]*grid_spacing[0]);
+        b = -1.0*radius[i]/(radius[i+1]*grid_spacing[0]);
         
         if(i==0){
-            cs_entry(triplet, i, i, 1.0);
+            d = radius[i+2]/(radius[i+1]*grid_spacing[0]);
+            b = -1.0*radius[i]/(radius[i+1]*grid_spacing[0]);
+            cs_entry(triplet, i, i, b);
+            cs_entry(triplet, i, i+2, d);
         }else if(i==(M-1)){
-            cs_entry(triplet, i, i, 1.0);
+            d = radius[i]/(radius[i-1]*grid_spacing[0]);
+            b = -1.0*radius[i-2]/(radius[i-1]*grid_spacing[0]);
+            
+            cs_entry(triplet, i, i-2, b);
+            cs_entry(triplet, i, i, d);
         }else{
             cs_entry(triplet, i, i-1, a);
             cs_entry(triplet, i, i, c);
@@ -125,6 +165,9 @@ void sparse(){
     cs_lusol(0, matrix, source, 1e-12);
     cs_spfree(triplet);
     cs_spfree(matrix);
+    
+    
+    
 
 }
 
@@ -143,9 +186,15 @@ int main()
     int i;
     //Pinner = 1.0;
     //Pouter = -10.337;
-    
-    Pinner = -10.0;
-    Pouter = 10.0;
+    Re = 1.0;
+    Wi = 5.0;
+    Wo = 5.0;
+    r1 = 1.0;
+    r2 = 2.0;
+    //Pinner = 0.0;
+    //Pouter = 40.0;
+    Pinner = Re*r1*r1*Wi*Wi/2.0;
+    //Pouter = ((Re*r2*r2*Wo*Wo)/2.0) + ;
     
     d1uphi = (double*) malloc(P_size*sizeof(double));
     uphi_new = (double*) malloc(P_size*sizeof(double));
@@ -155,21 +204,18 @@ int main()
     source = (double*) malloc((P_size+2)*sizeof(double));
     
     open_file();
-    Re = 1.0;
-    Wi = 5.0;
-    Wo = 0.0;
-    r1 = 1.0;
-    r2 = 2.0;
+    
     
     
     grid_spacing[0] = (r2-r1)/P_size;
     grid_spacing[1] = (2.0*Pi)/P_size;
+    set_radius();
     
     fill_source();
     
     sparse();
     
-    if(Wi>Wo){
+    /*if(Wi>Wo){
         if(source[0]>source[1] || source[P_size+1]>source[P_size]){
             if(source[0]>source[1]){
                 Pinner = source[1];
@@ -196,13 +242,13 @@ int main()
             fill_source();
             sparse();
         }
-    }
+    }*/
     
-
-
+    
+    
     // Print the solution vector.
     output=fopen("pressure.txt", "w");
-
+    
     for (i=0; i<(P_size+2); i++) {
         printf("source[%d] = %+5.4e\n", i, source[i]);
         fprintf(output, "%+5.4e \n", source[i]);
@@ -214,10 +260,14 @@ int main()
     output3=fopen("uphi_new.txt", "w");
     
     for (i=0; i<(P_size); i++) {
-
+        
         fprintf(output3, "%+5.4e \n", uphi_new[i]);
     }
+
     
+
+
+        
     // Clean up memory usage.
 
     free(source);
