@@ -42,18 +42,19 @@ void open_file(){
 void fill_source(){
     int i;
     for(i=0; i<(P_size+2); i++){
-        radius[i] = r1 + ((i-1)*grid_spacing[0]);
+        //radius[i] = r1 + ((i-1)*grid_spacing[0]);
         if(i==0){
             //source[i] = (2.0*radius[i]*Re*Wi*Wi);
-            source[i] = Pinner;
+            source[i] = Re*radius[i+1]*Wi*Wi;
         }else if(i==(P_size+1)){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
-            source[i] = Pouter;
+            //source[i] = Pouter;
+            source[i] = Re*radius[i-1]*Wo*Wo;
         }else{
             source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }
-        //printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[i]);
+        printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[i]);
 
     }
     
@@ -92,9 +93,12 @@ void sparse(){
         
         
         if(i==0){
-            cs_entry(triplet, i, i, 1.0);
+            cs_entry(triplet, i, i, e);
+            cs_entry(triplet, i, i+2, a);
         }else if(i==(M-1)){
-            cs_entry(triplet, i, i, 1.0);
+            cs_entry(triplet, i, i, a);
+            cs_entry(triplet, i, i-2, e);
+
         }else{
             cs_entry(triplet, i, i-1, a);
             cs_entry(triplet, i, i+1, e);
@@ -143,7 +147,7 @@ int main()
     open_file();
     Re = 1.0;
     Wi = 5.0;
-    Wo = 0.0;
+    Wo = 5.0;
     r1 = 1.0;
     r2 = 2.0;
     
@@ -155,7 +159,7 @@ int main()
     
     sparse();
     
-    if(Wi>Wo){
+    /*if(Wi>Wo){
         if(source[0]>source[1] || source[P_size+1]>source[P_size]){
             if(source[0]>source[1]){
                 Pinner = source[1];
@@ -182,7 +186,7 @@ int main()
             fill_source();
             sparse();
         }
-    }
+    }*/
     
 
 
