@@ -51,15 +51,15 @@ void fill_source(){
         //radius[i] = r1 + ((i-1)*grid_spacing[0]);
         if(i==0){
             //source[i] = (2.0*radius[i]*Re*Wi*Wi);
-            //source[i] = Re*radius[i+1]*Wi*Wi;
+            //source[i] = Re*radius[i]*Wi*Wi;
             //source[i] = Re*d1uphi[i]*d1uphi[i]/radius[i+1];
-            source[i] = 25.0;
+            source[i] = Pinner;
         }else if(i==(P_size+1)){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
             //source[i] = Pouter;
-            //source[i] = Re*radius[i-1]*Wo*Wo;
-            source[i] = Re*d1uphi[i-2]*d1uphi[i-2]/radius[i-1];
+            source[i] = Re*radius[i]*Wo*Wo;
+            //source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }else{
             source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }
@@ -87,7 +87,7 @@ void sparse(){
     const int N = 102;
     int i;
     // Declare an MxN matrix which can hold up to three band-diagonals.
-    struct cs_sparse *triplet = cs_spalloc(M, N, 3*N, 1, 1);
+    struct cs_sparse *triplet = cs_spalloc(M, N, 5*N, 1, 1);
     
     
     // Fill the diagonal, and the band above and below the diagonal with some
@@ -103,11 +103,11 @@ void sparse(){
         
         if(i==0){
             //cs_entry(triplet, i, i, e);
-            //cs_entry(triplet, i, i+2, a);
+            //cs_entry(triplet, i, i+1, a);
             cs_entry(triplet, i, i, 1.0);
         }else if(i==(M-1)){
             cs_entry(triplet, i, i, a);
-            cs_entry(triplet, i, i-2, e);
+            cs_entry(triplet, i, i-1, e);
         }else{
             cs_entry(triplet, i, i-1, e);
             cs_entry(triplet, i, i+1, a);
@@ -143,7 +143,7 @@ int main()
     //Pinner = 1.0;
     //Pouter = -10.337;
     
-    Pinner = -10.0;
+    Pinner = 1.0;
     Pouter = 10.0;
     Re = 1.0;
     Wi = 5.0;
