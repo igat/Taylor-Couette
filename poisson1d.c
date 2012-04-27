@@ -42,12 +42,12 @@ double delta_r(int position){
     double value;
     if(position==1){     //reflecting boundary
         //value = (d1uphi[position] - (radius[position-1]*Wi))/(grid_spacing[0]);
-        //value = Wi;
-        value = (2.0*d1uphi[position])/(grid_spacing[0]);
+        value = Wi;
+        //value = (2.0*d1uphi[position])/(grid_spacing[0]);
     }else if(position==(P_size)){        //reflecting boundary everywhere
         //value = ((radius[position+1]*Wo) - d1uphi[position-2])/(grid_spacing[0]); 
-        //value = Wo;
-        value = (-2.0*d1uphi[position-2])/(grid_spacing[0]); 
+        value = Wo;
+        //value = (-2.0*d1uphi[position-2])/(grid_spacing[0]); 
     }else{
         value = (d1uphi[position] - d1uphi[position-2])/(grid_spacing[0]); 
     }
@@ -90,7 +90,7 @@ void fill_source(){
         }else if(i==(P_size+1)){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
-            source[i] = Re*radius[i-1]*Wo*Wo;
+            source[i] = Re*radius[i]*Wo*Wo;
         }else{
             source[i] = 2.0*Re*d1uphi[i-1]*delta_r(i)/radius[i];
         }
@@ -146,7 +146,7 @@ void sparse(){
             d = 1.0/grid_spacing[0];
             b = -1.0*d;
             
-            cs_entry(triplet, i, i-2, b);
+            cs_entry(triplet, i, i-1, b);
             cs_entry(triplet, i, i, d);
         }else{
             cs_entry(triplet, i, i-1, a);
