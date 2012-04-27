@@ -41,13 +41,13 @@ void open_file(){
 double delta_r(int position){
     double value;
     if(position==1){     //reflecting boundary
-        value = (d1uphi[position] - (radius[position-1]*Wi))/(grid_spacing[0]);
+        //value = (d1uphi[position] - (radius[position-1]*Wi))/(grid_spacing[0]);
         //value = Wi;
-        //value = (2.0*d1uphi[position])/(grid_spacing[0]);
+        value = (2.0*d1uphi[position])/(grid_spacing[0]);
     }else if(position==(P_size)){        //reflecting boundary everywhere
-        value = ((radius[position+1]*Wo) - d1uphi[position-2])/(grid_spacing[0]); 
+        //value = ((radius[position+1]*Wo) - d1uphi[position-2])/(grid_spacing[0]); 
         //value = Wo;
-        //value = -2.0*d1uphi[position-2]/(grid_spacing[0]); 
+        value = (-2.0*d1uphi[position-2])/(grid_spacing[0]); 
     }else{
         value = (d1uphi[position] - d1uphi[position-2])/(grid_spacing[0]); 
     }
@@ -85,8 +85,8 @@ void fill_source(){
         
         if(i==0){
             //source[i] = (2.0*radius[i]*Re*Wi*Wi);
-            //source[i] = Pinner;
-            source[i] = Re*radius[i+1]*Wi*Wi;
+            source[i] = Pinner;
+            //source[i] = Re*radius[i+1]*Wi*Wi;
         }else if(i==(P_size+1)){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
@@ -103,7 +103,7 @@ void fill_source(){
 void finite_difference(){
     int i;
     for(i=0; i<P_size; i++){
-        double value = radius[i+1]*((source[i+2] - source[i]))/(grid_spacing[0]*Re);
+        double value = radius[i+1]*(fabs(source[i+2] - source[i]))/(grid_spacing[0]*Re);
         uphi_new[i] = sqrt(value);
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
@@ -118,7 +118,7 @@ void sparse(){
     const int N = 102;
     int i;
     // Declare an MxN matrix which can hold up to three band-diagonals.
-    struct cs_sparse *triplet = cs_spalloc(M, N, 5*N, 1, 1);
+    struct cs_sparse *triplet = cs_spalloc(M, N, 3*N, 1, 1);
     
     
     // Fill the diagonal, and the band above and below the diagonal with some
@@ -129,22 +129,22 @@ void sparse(){
         double a, c, e, d, b;
         double deltar2 = 1.0/(grid_spacing[0]*grid_spacing[0]);
         double deltar_r = 1.0/(radius[i]*grid_spacing[0]);
-        a = (deltar2 - deltar_r)*radius[i-1]/radius[i];
+        a = (deltar2 - deltar_r);
         c = -2.0*deltar2;
-        e = (deltar2 + deltar_r)*radius[i+1]/radius[i];
+        e = (deltar2 + deltar_r);
         //d = 1.0/grid_spacing[0];
         //b = -1.0*d;
-        d = radius[i+2]/(radius[i+1]*grid_spacing[0]);
-        b = -1.0*radius[i]/(radius[i+1]*grid_spacing[0]);
+        //d = radius[i+2]/(radius[i+1]*grid_spacing[0]);
+        //b = -1.0*radius[i]/(radius[i+1]*grid_spacing[0]);
         
         if(i==0){
-            d = radius[i+2]/(radius[i+1]*grid_spacing[0]);
-            b = -1.0*radius[i]/(radius[i+1]*grid_spacing[0]);
-            cs_entry(triplet, i, i, b);
-            cs_entry(triplet, i, i+2, d);
+            //d = radius[i+2]/(radius[i+1]*grid_spacing[0]);
+            //b = -1.0*radius[i]/(radius[i+1]*grid_spacing[0]);
+            cs_entry(triplet, i, i, 1.0);
+            //cs_entry(triplet, i, i+2, d);
         }else if(i==(M-1)){
-            d = radius[i]/(radius[i-1]*grid_spacing[0]);
-            b = -1.0*radius[i-2]/(radius[i-1]*grid_spacing[0]);
+            d = 1.0/grid_spacing[0];
+            b = -1.0*d;
             
             cs_entry(triplet, i, i-2, b);
             cs_entry(triplet, i, i, d);
@@ -191,9 +191,9 @@ int main()
     Wo = 5.0;
     r1 = 1.0;
     r2 = 2.0;
-    //Pinner = 0.0;
+    Pinner = 1.0;
     //Pouter = 40.0;
-    Pinner = Re*r1*r1*Wi*Wi/2.0;
+    //Pinner = Re*r1*r1*Wi*Wi/2.0;
     //Pouter = ((Re*r2*r2*Wo*Wo)/2.0) + ;
     
     d1uphi = (double*) malloc(P_size*sizeof(double));
