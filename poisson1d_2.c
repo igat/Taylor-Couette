@@ -18,7 +18,7 @@ FILE *output3;
 
 #define Pi 3.14159265
 static double *d1uphi, *uphi_new, *source, *radius;
-static double Wi, Wo, Re, r1, r2;
+static double Wi, Wo, r1, r2;
 static double grid_spacing[2];
 static int P_size;
 static double Pinner;
@@ -79,7 +79,7 @@ void fill_source(){
 void finite_difference(){
     int i;
     for(i=0; i<(P_size); i++){
-        double value = radius[i+1]*(fabs(source[i+1] - source[i]))/(grid_spacing[0]);
+        double value = radius[i+1]*((source[i+1] - source[i]))/(grid_spacing[0]);
         uphi_new[i] = value;
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
@@ -158,7 +158,6 @@ int main()
     P_size = 100;
     int i;
 
-    Re = 1.0;
     Wi = 5.0;
     Wo = 5.0;
     r1 = 1.0;
