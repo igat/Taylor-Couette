@@ -122,11 +122,15 @@ int main(int argc, char **argv)
     printf("s = %f, u_phi[Rdim] = %f \n", s, u_phi[Rdim-1]);
     
     output=fopen("Uphi.txt", "w");
+    output2=fopen("Uphi2.txt", "w");
+
     
     for(g = 0; g<(Rdim); g++)
     {
         //printf("radius[%d] = %f \n", g, radius[g]);
         fprintf(output, "%f \n", u_phi[g]);
+
+        fprintf(output2, "%f \n", (u_phi[g]*u_phi[g]));
         
     }
 
