@@ -58,7 +58,7 @@ void fill_source(){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
             //source[i] = Pouter;
-            source[i] = Re*radius[i]*Wi*Wi;
+            source[i] = Re*radius[i]*Wo*Wo;
             //source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }else{
             source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
@@ -73,7 +73,12 @@ void finite_difference(){
     int i;
     for(i=0; i<P_size; i++){
         double value = radius[i+1]*((source[i+1] - source[i]))/(grid_spacing[0]*Re);
-        uphi_new[i] = sqrt(value);
+        if(d1uphi[i]>=0){
+            uphi_new[i] = sqrt(value);
+        }else{
+            uphi_new[i] = -1.0*sqrt(value);
+        }
+        
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
 
@@ -161,7 +166,7 @@ int main()
     Pinner = 1.0;
     Pouter = 10.0;
     Re = 1.0;
-    Wi = 5.0;
+    Wi = -5.0;
     Wo = 5.0;
     r1 = 1.0;
     r2 = 2.0;
