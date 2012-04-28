@@ -41,15 +41,15 @@ void open_file(){
 double delta_r(int position){
     double value;
     if(position==1){     //reflecting boundary
-        value = (d1uphi[position] - (radius[position-1]*Wi))/(grid_spacing[0]);
+        value = (d1uphi[position-1] - (radius[position-1]*Wi))/(grid_spacing[0]);
         //value = Wi;
         //value = (2.0*d1uphi[position])/(grid_spacing[0]);
-    }else if(position==(P_size-1)){        //reflecting boundary everywhere
+    }else if(position==(P_size)){        //reflecting boundary everywhere
         value = ((radius[position+1]*Wo) - d1uphi[position-2])/(grid_spacing[0]); 
         //value = Wo;
         //value = (-2.0*d1uphi[position-2])/(grid_spacing[0]); 
     }else{
-        value = (d1uphi[position] - d1uphi[position-2])/(grid_spacing[0]); 
+        value = (d1uphi[position-1] - d1uphi[position-2])/(grid_spacing[0]); 
     }
     printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
     return value;
@@ -87,7 +87,7 @@ void fill_source(){
             //source[i] = (2.0*radius[i]*Re*Wi*Wi);
             source[i] = Pinner;
             //source[i] = Re*radius[i+1]*Wi*Wi;
-        }else if(i==(P_size)){
+        }else if(i==(P_size+1)){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
             source[i] = radius[i]*Wo*Wo;
@@ -104,9 +104,9 @@ void fill_source(){
 void finite_difference(){
     int i;
     //uphi_new[0] = r1*Wi;
-    uphi_new[P_size-1] = Wo*(r2-grid_spacing[0]);
-    for(i=0; i<(P_size-1); i++){
-        double value = radius[i+1]*(fabs(source[i+2] - source[i]))/(grid_spacing[0]);
+    //uphi_new[P_size-1] = Wo*(r2-grid_spacing[0]);
+    for(i=0; i<(P_size); i++){
+        double value = radius[i+1]*(fabs(source[i+1] - source[i]))/(grid_spacing[0]);
         uphi_new[i] = sqrt(value);
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
@@ -148,7 +148,7 @@ void sparse(){
             //cs_entry(triplet, i, i+1, c);
             //cs_entry(triplet, i, i, a);
             //cs_entry(triplet, i, i+2, e);
-        }else if(i==(M-1)){
+        }else if(i==(M)){
             d = 1.0/grid_spacing[0];
             b = -1.0*d;
             
