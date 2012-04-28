@@ -47,7 +47,7 @@ void set_radius(){
 
 void fill_source(){
     int i;
-    for(i=0; i<(P_size+2); i++){
+    for(i=0; i<(P_size+1); i++){
         //radius[i] = r1 + ((i-1)*grid_spacing[0]);
         if(i==0){
             //source[i] = (2.0*radius[i]*Re*Wi*Wi);
@@ -58,7 +58,7 @@ void fill_source(){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
             //source[i] = Pouter;
-            source[i] = Re*radius[i]*Wo*Wo;
+            source[i] = Re*radius[i]*Wi*Wi;
             //source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }else{
             source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
@@ -72,7 +72,7 @@ void fill_source(){
 void finite_difference(){
     int i;
     for(i=0; i<P_size; i++){
-        double value = radius[i+1]*((source[i+2] - source[i]))/(grid_spacing[0]*Re);
+        double value = radius[i+1]*((source[i+1] - source[i]))/(grid_spacing[0]*Re);
         uphi_new[i] = sqrt(value);
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
@@ -83,8 +83,8 @@ void finite_difference(){
 
 void sparse(){
     
-    const int M = 102;
-    const int N = 102;
+    const int M = 101;
+    const int N = 101;
     int i;
     // Declare an MxN matrix which can hold up to three band-diagonals.
     struct cs_sparse *triplet = cs_spalloc(M, N, 5*N, 1, 1);
@@ -101,16 +101,31 @@ void sparse(){
         e = -1.0*a;
         
         
-        if(i==0){
+        /*if(i==0){
             //cs_entry(triplet, i, i, e);
             //cs_entry(triplet, i, i+1, a);
             cs_entry(triplet, i, i, 1.0);
         }else if(i==(M-1)){
-            cs_entry(triplet, i, i, a);
-            cs_entry(triplet, i, i-1, e);
+            //cs_entry(triplet, i, i, a);
+            //cs_entry(triplet, i, i-1, e);
+            cs_entry(triplet, i, i, 1.0);
+            cs_entry(triplet, i, 0, 1.0);
         }else{
             cs_entry(triplet, i, i-1, e);
             cs_entry(triplet, i, i+1, a);
+        }*/
+        if(i==0){
+            //cs_entry(triplet, i, i, e);
+            //cs_entry(triplet, i, i+1, a);
+            cs_entry(triplet, i, i, 1.0);
+        }else if(i==(M)){
+            //cs_entry(triplet, i, i, a);
+            //cs_entry(triplet, i, i-1, e);
+            cs_entry(triplet, i, i, 1.0);
+            cs_entry(triplet, i, 0, 1.0);
+        }else{
+            cs_entry(triplet, i, i-1, e);
+            cs_entry(triplet, i, i, a);
         }
         
         
@@ -158,7 +173,7 @@ int main()
     radius = (double*) malloc((P_size+2)*sizeof(double));
 
 
-    source = (double*) malloc((P_size+2)*sizeof(double));
+    source = (double*) malloc((P_size+1)*sizeof(double));
     set_radius();
     open_file();
 
@@ -169,42 +184,14 @@ int main()
     fill_source();
     
     sparse();
-    
-    /*if(Wi>Wo){
-        if(source[0]>source[1] || source[P_size+1]>source[P_size]){
-            if(source[0]>source[1]){
-                Pinner = source[1];
-            }
-            
-            if(source[P_size+1]>source[P_size]){
-                Pouter = source[P_size];
-            }
-            fill_source();
-            sparse();
-            
-        }
-    }else{
-        printf("here, Wi = %f, Wo = %f \n", Wi, Wo);
-        if(source[0]<source[1] || source[P_size+1]<source[P_size]){
-            printf("source[0] = %f, source[1] = %f, source[P+1] = %f, souce[P] = %f \n", source[0], source[1], source[P_size+1] , source[P_size]);
-            if(source[0]<source[1]){
-                Pinner = source[1];
-            }
-            
-            if(source[P_size+1]<source[P_size]){
-                Pouter = source[P_size];
-            }
-            fill_source();
-            sparse();
-        }
-    }*/
+
     
 
 
     // Print the solution vector.
     output=fopen("pressure.txt", "w");
 
-    for (i=0; i<(P_size+2); i++) {
+    for (i=0; i<(P_size+1); i++) {
         printf("source[%d] = %+5.4e\n", i, source[i]);
         fprintf(output, "%+5.4e \n", source[i]);
     }
