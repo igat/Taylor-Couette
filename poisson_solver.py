@@ -20,8 +20,8 @@ for i in range(len(uphi_shooting)):
 	r2 = r1+ (i*0.01)
 	radius.append(r2)
 	radius2.append(r2)
-y = 2.0+0.01	
-radius2.append(y)
+##y = 2.0+0.01	
+##radius2.append(y)
 
 # create a figure window
 fig1 = plt.figure(1, figsize=(10,8))
