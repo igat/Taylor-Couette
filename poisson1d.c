@@ -48,18 +48,8 @@ void set_radius(){
 void fill_source(){
     int i;
     for(i=0; i<(P_size+1); i++){
-        //radius[i] = r1 + ((i-1)*grid_spacing[0]);
         if(i==0){
-            //source[i] = (2.0*radius[i]*Re*Wi*Wi);
-            //source[i] = Re*radius[i]*Wi*Wi;
-            //source[i] = Re*d1uphi[i]*d1uphi[i]/radius[i+1];
             source[i] = Pinner;
-        }else if(i==(P_size+1)){
-            //source[i] = radius[i]*Re*Wo*Wo;
-            //source[i] = 0.0;
-            //source[i] = Pouter;
-            source[i] = Re*radius[i]*Wo*Wo;
-            //source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }else{
             source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }
@@ -104,28 +94,10 @@ void sparse(){
         
         a = 1.0/grid_spacing[0];
         e = -1.0*a;
-        
-        
-        /*if(i==0){
-            //cs_entry(triplet, i, i, e);
-            //cs_entry(triplet, i, i+1, a);
-            cs_entry(triplet, i, i, 1.0);
-        }else if(i==(M-1)){
-            //cs_entry(triplet, i, i, a);
-            //cs_entry(triplet, i, i-1, e);
-            cs_entry(triplet, i, i, 1.0);
-            cs_entry(triplet, i, 0, 1.0);
-        }else{
-            cs_entry(triplet, i, i-1, e);
-            cs_entry(triplet, i, i+1, a);
-        }*/
+
         if(i==0){
-            //cs_entry(triplet, i, i, e);
-            //cs_entry(triplet, i, i+1, a);
             cs_entry(triplet, i, i, 1.0);
         }else if(i==(M)){
-            //cs_entry(triplet, i, i, a);
-            //cs_entry(triplet, i, i-1, e);
             cs_entry(triplet, i, i, 1.0);
             cs_entry(triplet, i, 0, 1.0);
         }else{
@@ -160,8 +132,7 @@ int main()
     
     P_size = 100;
     int i;
-    //Pinner = 1.0;
-    //Pouter = -10.337;
+
     
     Pinner = 1.0;
     Pouter = 10.0;
@@ -194,7 +165,7 @@ int main()
 
 
     // Print the solution vector.
-    output=fopen("pressure.txt", "w");
+    output=fopen("pressured1.txt", "w");
 
     for (i=0; i<(P_size+1); i++) {
         printf("source[%d] = %+5.4e\n", i, source[i]);
@@ -204,7 +175,7 @@ int main()
     finite_difference();
     
     
-    output3=fopen("uphi_new.txt", "w");
+    output3=fopen("uphi_newd1.txt", "w");
     
     for (i=0; i<(P_size); i++) {
 

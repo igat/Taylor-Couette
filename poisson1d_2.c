@@ -37,12 +37,6 @@ void open_file(){
     fclose(output2);
     
 }
-void set_radius(){
-    int i;
-    for(i=0; i<(P_size+2); i++){
-        radius[i] = r1 + ((i-1)*grid_spacing[0]);
-    }
-}
 
 double delta_r(int position){
     double value;
@@ -60,20 +54,6 @@ double delta_r(int position){
 void set_radius(){
     int i;
     for(i=0; i<(P_size+1); i++){
-<<<<<<< HEAD:poisson1d.c
-        //radius[i] = r1 + ((i-1)*grid_spacing[0]);
-        if(i==0){
-            //source[i] = (2.0*radius[i]*Re*Wi*Wi);
-            //source[i] = Re*radius[i]*Wi*Wi;
-            //source[i] = Re*d1uphi[i]*d1uphi[i]/radius[i+1];
-            source[i] = Pinner;
-        }else if(i==(P_size+1)){
-            //source[i] = radius[i]*Re*Wo*Wo;
-            //source[i] = 0.0;
-            //source[i] = Pouter;
-            source[i] = Re*radius[i]*Wo*Wo;
-            //source[i] = Re*d1uphi[i-1]*d1uphi[i-1]/radius[i];
-=======
         radius[i] = r1 + ((i-1)*grid_spacing[0]);
     }
 }
@@ -87,7 +67,6 @@ void fill_source(){
         }else if(i==1){
 
             source[i] = d1uphi[i-1]*d1uphi[i-1]/radius[i];
->>>>>>> second_d:poisson1d_2.c
         }else{
             source[i] = 2.0*d1uphi[i-1]*delta_r(i)/radius[i];
         }
@@ -99,20 +78,9 @@ void fill_source(){
 
 void finite_difference(){
     int i;
-<<<<<<< HEAD:poisson1d.c
-    for(i=0; i<P_size; i++){
-        double value = radius[i+1]*((source[i+1] - source[i]))/(grid_spacing[0]*Re);
-        if(d1uphi[i]>=0){
-            uphi_new[i] = sqrt(value);
-        }else{
-            uphi_new[i] = -1.0*sqrt(value);
-        }
-        
-=======
     for(i=0; i<(P_size); i++){
         double value = radius[i+1]*(fabs(source[i+1] - source[i]))/(grid_spacing[0]);
         uphi_new[i] = value;
->>>>>>> second_d:poisson1d_2.c
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
 
@@ -126,7 +94,7 @@ void sparse(){
     const int N = 101;
     int i;
     // Declare an MxN matrix which can hold up to three band-diagonals.
-    struct cs_sparse *triplet = cs_spalloc(M, N, 5*N, 1, 1);
+    struct cs_sparse *triplet = cs_spalloc(M, N, 3*N, 1, 1);
     
     
     // Fill the diagonal, and the band above and below the diagonal with some
@@ -134,12 +102,6 @@ void sparse(){
     
     
     for (i=0; i<M; i++) {
-<<<<<<< HEAD:poisson1d.c
-        double a, e;
-        
-        a = 1.0/grid_spacing[0];
-        e = -1.0*a;
-=======
         double a, c, e, d, b;
         double deltar2 = 1.0/(grid_spacing[0]*grid_spacing[0]);
         double deltar_r = 1.0/(radius[i]*grid_spacing[0]);
@@ -147,36 +109,10 @@ void sparse(){
         a = deltar2;
         c = -((2.0*deltar2) + (deltar_r));
         e = deltar2 + deltar_r;
->>>>>>> second_d:poisson1d_2.c
         
         
-        /*if(i==0){
-            //cs_entry(triplet, i, i, e);
-            //cs_entry(triplet, i, i+1, a);
-            cs_entry(triplet, i, i, 1.0);
-<<<<<<< HEAD:poisson1d.c
-        }else if(i==(M-1)){
-            //cs_entry(triplet, i, i, a);
-            //cs_entry(triplet, i, i-1, e);
-            cs_entry(triplet, i, i, 1.0);
-            cs_entry(triplet, i, 0, 1.0);
-        }else{
-            cs_entry(triplet, i, i-1, e);
-            cs_entry(triplet, i, i+1, a);
-        }*/
         if(i==0){
-            //cs_entry(triplet, i, i, e);
-            //cs_entry(triplet, i, i+1, a);
             cs_entry(triplet, i, i, 1.0);
-        }else if(i==(M)){
-            //cs_entry(triplet, i, i, a);
-            //cs_entry(triplet, i, i-1, e);
-            cs_entry(triplet, i, i, 1.0);
-            cs_entry(triplet, i, 0, 1.0);
-        }else{
-            cs_entry(triplet, i, i-1, e);
-            cs_entry(triplet, i, i, a);
-=======
 
         }else if(i==1){
             d = 1.0/grid_spacing[0];
@@ -189,7 +125,6 @@ void sparse(){
             cs_entry(triplet, i, i-2, a);
             cs_entry(triplet, i, i-1, c);
             cs_entry(triplet, i, i, e);
->>>>>>> second_d:poisson1d_2.c
         }
         
         
@@ -222,27 +157,14 @@ int main()
     
     P_size = 100;
     int i;
-<<<<<<< HEAD:poisson1d.c
-    //Pinner = 1.0;
-    //Pouter = -10.337;
-    
-    Pinner = 1.0;
-    Pouter = 10.0;
-=======
 
->>>>>>> second_d:poisson1d_2.c
     Re = 1.0;
     Wi = 5.0;
     Wo = 5.0;
     r1 = 1.0;
     r2 = 2.0;
-<<<<<<< HEAD:poisson1d.c
-    grid_spacing[0] = (r2-r1)/P_size;
-    grid_spacing[1] = (2.0*Pi)/P_size;
-=======
     Pinner = 1.0;
 
->>>>>>> second_d:poisson1d_2.c
     
     d1uphi = (double*) malloc(P_size*sizeof(double));
     uphi_new = (double*) malloc(P_size*sizeof(double));
@@ -250,14 +172,6 @@ int main()
 
 
     source = (double*) malloc((P_size+1)*sizeof(double));
-<<<<<<< HEAD:poisson1d.c
-    set_radius();
-    open_file();
-
-    
-    
-
-=======
     
     open_file();
     
@@ -266,24 +180,16 @@ int main()
     grid_spacing[0] = (r2-r1)/P_size;
     grid_spacing[1] = (2.0*Pi)/P_size;
     set_radius();
->>>>>>> second_d:poisson1d_2.c
     
     fill_source();
     
     sparse();
 
-<<<<<<< HEAD:poisson1d.c
-=======
     
->>>>>>> second_d:poisson1d_2.c
     
     // Print the solution vector.
     output=fopen("pressure.txt", "w");
-<<<<<<< HEAD:poisson1d.c
-
-=======
     
->>>>>>> second_d:poisson1d_2.c
     for (i=0; i<(P_size+1); i++) {
         printf("source[%d] = %+5.4e\n", i, source[i]);
         fprintf(output, "%+5.4e \n", source[i]);
