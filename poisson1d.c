@@ -166,7 +166,7 @@ int main()
     Pinner = 1.0;
     Pouter = 10.0;
     Re = 1.0;
-    Wi = -5.0;
+    Wi = 5.0;
     Wo = 5.0;
     r1 = 1.0;
     r2 = 2.0;
