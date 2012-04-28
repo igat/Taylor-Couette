@@ -40,13 +40,7 @@ void open_file(){
 
 double delta_r(int position){
     double value;
-    if(position==1){
-        value = (d1uphi[position-1] - (radius[position-1]*Wi))/(grid_spacing[0]);
-    }else if(position==(P_size + 1)){       
-        value = ((radius[position]*Wo) - d1uphi[position-2])/(grid_spacing[0]); 
-    }else{
-        value = (d1uphi[position-1] - d1uphi[position-2])/(grid_spacing[0]); 
-    }
+    value = (d1uphi[position-1] - d1uphi[position-2])/(grid_spacing[0]); 
     //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
     return value;
 }
@@ -59,18 +53,19 @@ void set_radius(){
 }
 
 void fill_source(){
-    int i;
-    for(i=0; i<(P_size+1); i++){
-        
-        if(i==0){
+    int i, position;
+    for(i=0; i<(P_size*(P_size+1)); i++){
+        position = i/P_size;
+        if(i<P_size){
             source[i] = Pinner;
-        }else if(i==1){
-
-            source[i] = d1uphi[i-1]*d1uphi[i-1]/radius[i];
+        }else if(i>=P_size && i<(2*P_size)){
+            source[i] = d1uphi[position-1]*d1uphi[position-1]/radius[position];
+            //printf("here \n");
+            //source[i] = 1.25;
         }else{
-            source[i] = 2.0*d1uphi[i-1]*delta_r(i)/radius[i];
+            source[i] = 2.0*d1uphi[position-1]*delta_r(position)/radius[position];
         }
-        printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[i]);
+        printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[position]);
 
     }
     
@@ -79,7 +74,7 @@ void fill_source(){
 void finite_difference(){
     int i;
     for(i=0; i<(P_size); i++){
-        double value = radius[i+1]*((source[i+1] - source[i]))/(grid_spacing[0]);
+        double value = radius[i+1]*((source[((i+1)*P_size)] - source[i*P_size]))/(grid_spacing[0]);
         uphi_new[i] = value;
         //printf("value = %f, uphinew[%d] = %f \n", value, i, uphi_new[i]);
     }
@@ -90,11 +85,11 @@ void finite_difference(){
 
 void sparse(){
     
-    const int M = 101;
-    const int N = 101;
+    const int M = P_size*(P_size+1);
+    const int N = P_size*(P_size+1);
     int i;
     // Declare an MxN matrix which can hold up to three band-diagonals.
-    struct cs_sparse *triplet = cs_spalloc(M, N, 3*N, 1, 1);
+    struct cs_sparse *triplet = cs_spalloc(M, N, 5*N, 1, 1);
     
     
     // Fill the diagonal, and the band above and below the diagonal with some
@@ -102,28 +97,57 @@ void sparse(){
     
     
     for (i=0; i<M; i++) {
+        double radius1 = radius[i/P_size];
         double a, c, e, d, b;
         double deltar2 = 1.0/(grid_spacing[0]*grid_spacing[0]);
-        double deltar_r = 1.0/(radius[i]*grid_spacing[0]);
+        double deltar_r = 1.0/(radius1*grid_spacing[0]);                   
 
-        a = deltar2;
-        c = -((2.0*deltar2) + (deltar_r));
-        e = deltar2 + deltar_r;
         
         
-        if(i==0){
+        
+        if(i<P_size){
             cs_entry(triplet, i, i, 1.0);
 
-        }else if(i==1){
-            d = 1.0/grid_spacing[0];
+        }else if(i>=P_size && i<(2*P_size)){
+            d = (1.0/grid_spacing[0]);
             b = -1.0*d;
             
-            cs_entry(triplet, i, i-1, b);
-            cs_entry(triplet, i, i, d);
-            
+            //cs_entry(triplet, i, (i-P_size), b);
+            //cs_entry(triplet, i, i, d);
+            cs_entry(triplet, i, i, 1.0);
+            printf(" d = %f, b = %f position i-P_size = %d , i = %d \n",d, b, i-P_size, i);
         }else{
-            cs_entry(triplet, i, i-2, a);
-            cs_entry(triplet, i, i-1, c);
+            a = deltar2;
+            
+            c = -((2.0*deltar2) + (deltar_r));
+            
+            //e = deltar2 + deltar_r - (2.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]));
+            e = deltar2 + deltar_r +(1.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]));
+            
+            
+            //d = 1.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]);
+            //b = -1.0*d;
+            d = 1.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]); //for P_i, j-2
+            b = -2.0*d; //for P_i, j-1
+            if(i%P_size==0){
+                cs_entry(triplet, i, i+(P_size-1), b);
+                cs_entry(triplet, i, i+(P_size-2), d);
+            }else if((i-1)%P_size==0){
+                cs_entry(triplet, i, i-1, b);
+                cs_entry(triplet, i, i+(P_size-1), d);
+            }else{
+                cs_entry(triplet, i, i-1, b);
+                cs_entry(triplet, i, i-2, d);
+            }
+            
+            /*if((i + 1)%P_size==0){
+                cs_entry(triplet, i, i-(P_size - 1), d);
+            }else{
+                cs_entry(triplet, i, i-2, d);
+            }*/
+
+            cs_entry(triplet, i, i-(2*P_size), a);
+            cs_entry(triplet, i, i-(1*P_size), c);
             cs_entry(triplet, i, i, e);
         }
         
@@ -154,7 +178,7 @@ int main()
 // -----------------------------------------------------------------------------
 {
     //for a 100x100 array, but have 1 ghost cell  for bcs
-    
+    //have a 100x100 pressure aray
     P_size = 100;
     int i;
 
@@ -170,7 +194,7 @@ int main()
     radius = (double*) malloc((P_size+1)*sizeof(double));
 
 
-    source = (double*) malloc((P_size+1)*sizeof(double));
+    source = (double*) malloc(P_size*(P_size+1)*sizeof(double));
     
     open_file();
     
@@ -189,9 +213,13 @@ int main()
     // Print the solution vector.
     output=fopen("pressure.txt", "w");
     
-    for (i=0; i<(P_size+1); i++) {
+    for (i=0; i<(P_size*(P_size+1)); i++) {
         printf("source[%d] = %+5.4e\n", i, source[i]);
-        fprintf(output, "%+5.4e \n", source[i]);
+        if(i%P_size==0){
+            
+            fprintf(output, "%+5.4e \n", source[i]);
+        }
+        
     }
     
     finite_difference();

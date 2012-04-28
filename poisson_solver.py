@@ -9,7 +9,7 @@ import math as math
 uphi_shooting = np.loadtxt('Uphi2.txt',skiprows=0 , unpack=True)
 uphi_sparse = np.loadtxt('uphi_new.txt',skiprows=0 , unpack=True)
 pressure = np.loadtxt('pressure.txt',skiprows=0 , unpack=True)
-pressure2 = np.loadtxt('pressured1.txt',skiprows=0 , unpack=True)
+##pressure2 = np.loadtxt('pressured1.txt',skiprows=0 , unpack=True)
 
 
 radius = []
@@ -50,8 +50,8 @@ ax1.set_title(r'$u_{\phi}(r)$ vs radius')
 ax2 = fig1.add_subplot(2,1,2)
 ax2.set_xlim(0.8, 2.2)
 ax2.plot(radius2, pressure, 'b', label = '2nd deriv')
-ax2.plot(radius2, pressure2, 'g', label = 'first deriv')
-ax2.legend(loc = 'best')
+##ax2.plot(radius2, pressure2, 'g', label = 'first deriv')
+##ax2.legend(loc = 'best')
 ax2.grid()
 ax2.set_xlabel('radius')
 ax2.set_ylabel('Pressure')
