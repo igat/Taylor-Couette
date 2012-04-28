@@ -44,7 +44,7 @@ double delta_r(int position){
         value = (d1uphi[position-1] - (radius[position-1]*Wi))/(grid_spacing[0]);
         //value = Wi;
         //value = (2.0*d1uphi[position])/(grid_spacing[0]);
-    }else if(position==(P_size)){        //reflecting boundary everywhere
+    }else if(position==(P_size + 1)){        //reflecting boundary everywhere
         value = ((radius[position+1]*Wo) - d1uphi[position-2])/(grid_spacing[0]); 
         //value = Wo;
         //value = (-2.0*d1uphi[position-2])/(grid_spacing[0]); 
@@ -87,10 +87,10 @@ void fill_source(){
             //source[i] = (2.0*radius[i]*Re*Wi*Wi);
             source[i] = Pinner;
             //source[i] = Re*radius[i+1]*Wi*Wi;
-        }else if(i==(P_size+1)){
+        }else if(i==1){
             //source[i] = radius[i]*Re*Wo*Wo;
             //source[i] = 0.0;
-            source[i] = radius[i]*Wo*Wo;
+            source[i] = d1uphi[i-1]*d1uphi[i-1]/radius[i];
         }else{
             source[i] = 2.0*d1uphi[i-1]*delta_r(i)/radius[i];
         }
@@ -148,7 +148,7 @@ void sparse(){
             //cs_entry(triplet, i, i+1, c);
             //cs_entry(triplet, i, i, a);
             //cs_entry(triplet, i, i+2, e);
-        }else if(i==(M)){
+        }else if(i==1){
             d = 1.0/grid_spacing[0];
             b = -1.0*d;
             
@@ -159,9 +159,9 @@ void sparse(){
             cs_entry(triplet, i, i-1, c);*/
             
         }else{
-            cs_entry(triplet, i, i-1, a);
-            cs_entry(triplet, i, i, c);
-            cs_entry(triplet, i, i+1, e);
+            cs_entry(triplet, i, i-2, a);
+            cs_entry(triplet, i, i-1, c);
+            cs_entry(triplet, i, i, e);
         }
         
         
