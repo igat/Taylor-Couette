@@ -13,11 +13,12 @@ gcc -Wall  -o poisson1d_2 poisson1d_2.c -I/$HOME/software/CSparse/Include -L/$HO
 #include "cs.h"
 
 FILE *output;
+FILE *output1;
 FILE *output2;
 FILE *output3;
 
 #define Pi 3.14159265
-static double *d1uphi, *uphi_new, *source, *radius;
+static double *d1uphi, *uphi_new, *source, *radius, *d1ur;
 static double Wi, Wo, r1, r2;
 static double grid_spacing[2];
 static int P_size;
@@ -26,6 +27,8 @@ static double Pinner;
 
 void open_file(){
     output2 = fopen("Uphi.txt", "rt");
+    output1 = fopen("Ur.txt", "rt");
+
     char line[80];
     int i=0;
     
@@ -34,13 +37,35 @@ void open_file(){
         
         i+=1;
     }
+    i=0;
+    
+    while(fgets(line, 80, output1) !=NULL){
+        sscanf(line, "%lf",&d1ur[i]);
+        
+        i+=1;
+    }
+    fclose(output1);
     fclose(output2);
     
 }
 
 double delta_r(int position){
     double value;
-    value = (d1uphi[position-1] - d1uphi[position-2])/(grid_spacing[0]); 
+    value = (d1uphi[position] - d1uphi[position-P_size])/(grid_spacing[0]); 
+    //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
+    return value;
+}
+
+double delta_phi(int position){
+    double value;
+    value = (d1ur[position] - d1ur[position-1])/(grid_spacing[1]); 
+    //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
+    return value;
+}
+
+double delta_r_ur(int position){
+    double value;
+    value = (d1ur[position] - d1ur[position-P_size])/(grid_spacing[0]); 
     //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
     return value;
 }
@@ -59,11 +84,9 @@ void fill_source(){
         if(i<P_size){
             source[i] = Pinner;
         }else if(i>=P_size && i<(2*P_size)){
-            source[i] = d1uphi[position-1]*d1uphi[position-1]/radius[position];
-            //printf("here \n");
-            //source[i] = 1.25;
+            source[i] = d1uphi[i-P_size]*d1uphi[i-P_size]/radius[position];
         }else{
-            source[i] = 2.0*d1uphi[position-1]*delta_r(position)/radius[position];
+            source[i] = 2.0*((delta_r(i-P_size)*((d1uphi[i-P_size]/radius[position]) - (delta_phi(i-P_size)/radius[position]))) - (delta_r_ur(i-P_size)*delta_r_ur(i-P_size)));
         }
         //printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[position]);
 
@@ -189,9 +212,10 @@ int main()
     Pinner = 1.0;
 
     
-    d1uphi = (double*) malloc(P_size*sizeof(double));
+    d1uphi = (double*) malloc(P_size*P_size*sizeof(double));
     uphi_new = (double*) malloc(P_size*sizeof(double));
     radius = (double*) malloc((P_size+1)*sizeof(double));
+    d1ur = (double*) malloc(P_size*P_size*sizeof(double));
 
 
     source = (double*) malloc(P_size*(P_size+1)*sizeof(double));

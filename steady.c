@@ -123,16 +123,23 @@ int main(int argc, char **argv)
     
     output=fopen("Uphi.txt", "w");
     output2=fopen("Uphi2.txt", "w");
+    output3=fopen("Ur.txt", "w");
 
     
     for(g = 0; g<(Rdim); g++)
     {
-        //printf("radius[%d] = %f \n", g, radius[g]);
-        fprintf(output, "%f \n", u_phi[g]);
+        for(i=0; i<Rdim; i++){
+            fprintf(output, "%f \n", u_phi[g]);
+            fprintf(output3, "%f \n", 0.0);
+
+        }
 
         fprintf(output2, "%f \n", (u_phi[g]*u_phi[g]));
         
     }
+    fclose(output3);
+    fclose(output2);
+    fclose(output);
 
 
 
