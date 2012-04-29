@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     //V2 = r2*omega;
     
     V1 = 5.0;
-    V2 = 10.0;
+    V2 = 20.0;
     
     double s, s_old;
     

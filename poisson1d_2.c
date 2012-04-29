@@ -65,7 +65,7 @@ void fill_source(){
         }else{
             source[i] = 2.0*d1uphi[position-1]*delta_r(position)/radius[position];
         }
-        printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[position]);
+        //printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[position]);
 
     }
     
@@ -98,46 +98,42 @@ void sparse(){
     
     for (i=0; i<M; i++) {
         double radius1 = radius[i/P_size];
-        double a, c, e, d, b;
+        double a, b, c, d, e, f, g;
         double deltar2 = 1.0/(grid_spacing[0]*grid_spacing[0]);
-        double deltar_r = 1.0/(radius1*grid_spacing[0]);                   
+        double deltar_r = 1.0/(radius1*grid_spacing[0]);     
+        double deltaphi = 1.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]);
 
+        a = deltar2;
+        b = (-2.0*deltar2) - (deltar_r);
+        c = deltaphi;
+        d = deltar2 + deltar_r - (2.0*deltaphi);
+        e = deltaphi;
         
         
+        f = (1.0/grid_spacing[0]);
+        g = -1.0*f;
         
         if(i<P_size){
             cs_entry(triplet, i, i, 1.0);
 
         }else if(i>=P_size && i<(2*P_size)){
-            d = (1.0/grid_spacing[0]);
-            b = -1.0*d;
             
-            //cs_entry(triplet, i, (i-P_size), b);
-            //cs_entry(triplet, i, i, d);
-            cs_entry(triplet, i, i, 1.0);
-            printf(" d = %f, b = %f position i-P_size = %d , i = %d \n",d, b, i-P_size, i);
+            
+            cs_entry(triplet, i, (i-P_size), g);
+            cs_entry(triplet, i, i, f);
+            //cs_entry(triplet, i, i, 1.0);
+            //printf(" d = %f, b = %f position i-P_size = %d , i = %d \n",d, b, i-P_size, i);
         }else{
-            a = deltar2;
             
-            c = -((2.0*deltar2) + (deltar_r));
-            
-            //e = deltar2 + deltar_r - (2.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]));
-            e = deltar2 + deltar_r +(1.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]));
-            
-            
-            //d = 1.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]);
-            //b = -1.0*d;
-            d = 1.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]); //for P_i, j-2
-            b = -2.0*d; //for P_i, j-1
             if(i%P_size==0){
-                cs_entry(triplet, i, i+(P_size-1), b);
-                cs_entry(triplet, i, i+(P_size-2), d);
-            }else if((i-1)%P_size==0){
-                cs_entry(triplet, i, i-1, b);
-                cs_entry(triplet, i, i+(P_size-1), d);
+                cs_entry(triplet, i, i+(P_size-1), c);
+                cs_entry(triplet, i, i+1, e);
+            }else if((i+1)%P_size==0){
+                cs_entry(triplet, i, i-1, c);
+                cs_entry(triplet, i, i-(P_size-1), e);
             }else{
-                cs_entry(triplet, i, i-1, b);
-                cs_entry(triplet, i, i-2, d);
+                cs_entry(triplet, i, i-1, c);
+                cs_entry(triplet, i, i+1, e);
             }
             
             /*if((i + 1)%P_size==0){
@@ -147,8 +143,12 @@ void sparse(){
             }*/
 
             cs_entry(triplet, i, i-(2*P_size), a);
-            cs_entry(triplet, i, i-(1*P_size), c);
-            cs_entry(triplet, i, i, e);
+            cs_entry(triplet, i, i-(P_size), b);
+            cs_entry(triplet, i, i, d);
+            //printf("source[i-(2*Psize)] = %f, a = %f\n",source[i-(2*P_size)], a);
+            //printf("source[i-(Psize)] = %f, c = %f\n",source[i-(P_size)], c );
+            //printf("source[%d] = %f, e  = %f\n",i, source[i], e);
+
         }
         
         
@@ -183,7 +183,7 @@ int main()
     int i;
 
     Wi = 5.0;
-    Wo = 5.0;
+    Wo = 10.0;
     r1 = 1.0;
     r2 = 2.0;
     Pinner = 1.0;
@@ -214,7 +214,7 @@ int main()
     output=fopen("pressure.txt", "w");
     
     for (i=0; i<(P_size*(P_size+1)); i++) {
-        printf("source[%d] = %+5.4e\n", i, source[i]);
+        //printf("source[%d] = %+5.4e\n", i, source[i]);
         if(i%P_size==0){
             
             fprintf(output, "%+5.4e \n", source[i]);
