@@ -11,6 +11,7 @@ gcc -Wall  -o poisson1d_2 poisson1d_2.c -I/$HOME/software/CSparse/Include -L/$HO
 #include <stdlib.h>
 #include <math.h>
 #include "cs.h"
+#include "poisson1d_2.h"
 
 FILE *output;
 FILE *output1;
@@ -23,9 +24,10 @@ static double Wi, Wo, r1, r2;
 static double grid_spacing[2];
 static int P_size;
 static double Pinner;
+//static double *uphi_new, *source, *radius;
 
 
-void open_file(){
+/*void open_file(){
     output2 = fopen("Uphi.txt", "rt");
     output1 = fopen("Ur.txt", "rt");
 
@@ -47,16 +49,16 @@ void open_file(){
     fclose(output1);
     fclose(output2);
     
-}
+}*/
 
-double delta_r(int position){
+double deriv_r(int position){
     double value;
     value = (d1uphi[position] - d1uphi[position-P_size])/(grid_spacing[0]); 
     //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
     return value;
 }
 
-double delta_phi(int position){
+double deriv_phi(int position){
     double value;
     value = (d1ur[position] - d1ur[position-1])/(grid_spacing[1]); 
     //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
@@ -86,7 +88,7 @@ void fill_source(){
         }else if(i>=P_size && i<(2*P_size)){
             source[i] = d1uphi[i-P_size]*d1uphi[i-P_size]/radius[position];
         }else{
-            source[i] = 2.0*((delta_r(i-P_size)*((d1uphi[i-P_size]/radius[position]) - (delta_phi(i-P_size)/radius[position]))) - (delta_r_ur(i-P_size)*delta_r_ur(i-P_size)));
+            source[i] = 2.0*((deriv_r(i-P_size)*((d1uphi[i-P_size]/radius[position]) - (deriv_phi(i-P_size)/radius[position]))) - (delta_r_ur(i-P_size)*delta_r_ur(i-P_size)));
         }
         //printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[position]);
 
@@ -144,7 +146,6 @@ void sparse(){
             
             cs_entry(triplet, i, (i-P_size), g);
             cs_entry(triplet, i, i, f);
-            //cs_entry(triplet, i, i, 1.0);
             //printf(" d = %f, b = %f position i-P_size = %d , i = %d \n",d, b, i-P_size, i);
         }else{
             
@@ -158,12 +159,6 @@ void sparse(){
                 cs_entry(triplet, i, i-1, c);
                 cs_entry(triplet, i, i+1, e);
             }
-            
-            /*if((i + 1)%P_size==0){
-                cs_entry(triplet, i, i-(P_size - 1), d);
-            }else{
-                cs_entry(triplet, i, i-2, d);
-            }*/
 
             cs_entry(triplet, i, i-(2*P_size), a);
             cs_entry(triplet, i, i-(P_size), b);
@@ -192,7 +187,7 @@ void sparse(){
 }
 
 
-int main()
+void poisson_pressure(double *d1uphi, double *d1ur, double *pressure, int P_size, double r1, double r2, double Wi, double Wo)
 // -----------------------------------------------------------------------------
 // This program uses the CSparse library to solve the matrix equation A x = b.
 // The values used for the coefficient 'b' and the matrix 'A' are totally
@@ -202,25 +197,28 @@ int main()
 {
     //for a 100x100 array, but have 1 ghost cell  for bcs
     //have a 100x100 pressure aray
-    P_size = 100;
+    //P_size = 100;
     int i;
 
-    Wi = 5.0;
+    /*Wi = 5.0;
     Wo = 10.0;
     r1 = 1.0;
     r2 = 2.0;
-    Pinner = 1.0;
+    
 
     
     d1uphi = (double*) malloc(P_size*P_size*sizeof(double));
-    uphi_new = (double*) malloc(P_size*sizeof(double));
-    radius = (double*) malloc((P_size+1)*sizeof(double));
-    d1ur = (double*) malloc(P_size*P_size*sizeof(double));
+    
+    d1ur = (double*) malloc(P_size*P_size*sizeof(double));*/
 
 
     source = (double*) malloc(P_size*(P_size+1)*sizeof(double));
     
-    open_file();
+    Pinner = 1.0; 
+    radius = (double*) malloc((P_size+1)*sizeof(double)); 
+    uphi_new = (double*) malloc(P_size*sizeof(double));
+
+    //open_file();
     
     
     
@@ -239,6 +237,8 @@ int main()
     
     for (i=0; i<(P_size*(P_size+1)); i++) {
         //printf("source[%d] = %+5.4e\n", i, source[i]);
+        pressure[i] = source[i];
+        
         if(i%P_size==0){
             
             fprintf(output, "%+5.4e \n", source[i]);
@@ -262,7 +262,11 @@ int main()
         
     // Clean up memory usage.
 
+    free(uphi_new);
+    free(radius);
     free(source);
     
-    return 0;
+    //return 0;
 }
+
+
