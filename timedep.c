@@ -22,7 +22,7 @@
 
 
 
-#define Pi (4.0*atan(1.0))
+#define Pi 3.14159265
 #define max_iterations 50
 #define max_iterations1 10
 
@@ -370,7 +370,7 @@ static void DrawGLScene()
     glFlush();
     glutSwapBuffers();
     
-    integrate_u();
+    //integrate_u();
 }
 
 
@@ -435,7 +435,7 @@ void integrate_u(){
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            //printf("vphi[%d]^2/radius = %f \n ", position, U_PHI[position]*U_PHI[position]/radius[i]);
+            printf("vphi[%d]^2/radius = %f \n ", position, U_PHI[position]*U_PHI[position]/radius[i]);
             if(i==0){
                 ur1[position] = 0.0;
                 up1[position] = V_phi_inner;

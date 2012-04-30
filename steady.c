@@ -128,8 +128,9 @@ int main(int argc, char **argv)
     
     for(g = 0; g<(Rdim); g++)
     {
+        fprintf(output, "%f \n", u_phi[g]);
         for(i=0; i<Rdim; i++){
-            fprintf(output, "%f \n", u_phi[g]);
+            
             fprintf(output3, "%f \n", 0.0);
 
         }
