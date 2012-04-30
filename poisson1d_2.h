@@ -14,15 +14,15 @@ FILE *output3;
 
 #define Pi 3.14159265
 
-double deriv_r(int position);
+double deriv_r(int position, double *d1uphi);
 
-double deriv_phi(int position);
+double deriv_phi(int position, double *d1ur1);
 
-double delta_r_ur(int position);
+double delta_r_ur(int position, double *d1ur1);
 
 void set_radius();
 
-void fill_source();
+void fill_source(double *d1uphi, double *d1ur);
 
 void finite_difference();
 

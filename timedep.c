@@ -40,7 +40,7 @@ static double *d1uphi;
 static double grid_spacing[2];
 static double *radius;
 static double Re;
-static double V_phi_outer, V_phi_inner;
+static double V_phi_outer, V_phi_inner, Wi, Wo;
 static double omega;
 static double residual[max_iterations];
 static int resid;
@@ -78,6 +78,76 @@ void initialize_u(){
                  
             
 }
+/*
+double delta_phi2(double *w, int position, int r_or_phi){
+    double value;
+    if(position%N[1]==0){
+        //printf("at boundary condition (0) for phi2. position = %d \n", position);
+        value = (w[position + 1] + w[position + N[1]-1] - (2.0*w[position]))/(grid_spacing[1]*grid_spacing[1]);
+    }else if(position%N[1] ==(N[1]-1)){
+        //printf("at boundary condition (n1-1) for phi2. position = %d \n", position);
+        value = (w[position-N[1]+1] + w[position-1] - (2.0*w[position]))/(grid_spacing[1]*grid_spacing[1]);
+    }else{
+        value = (w[position + 1] + w[position-1] - (2.0*w[position]))/(grid_spacing[1]*grid_spacing[1]);
+    }
+    return value;
+}
+
+double delta_r2(double *w, int position, int r_or_phi){
+    double value;
+    if(position<=(N[1]-1)){     //reflecting boundary
+        if(r_or_phi==1){
+            value = (w[position])/(grid_spacing[0]*grid_spacing[0]); 
+        }else{
+            value = (w[position] + (Wi*(r1-grid_spacing[0])) - (2.0*(Wi*(r1-(2.0*grid_spacing[0])))))/(grid_spacing[0]*grid_spacing[0]);
+        }
+        //value = (-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]);
+    }else if(position<=((2*N[1])-1)){        //reflecting boundary
+        //printf("at boundary condition (greater than n0-1*n1) for r2. position = %d \n", position);
+        //value = (-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]);
+        if(r_or_phi==1){
+            value = (w[position] + w[position-N[0]])/(grid_spacing[0]*grid_spacing[0]); 
+        }else{
+            value = (w[position] +  w[position-N[0]] - (2.0*(Wi*(r1-(grid_spacing[0])))))/(grid_spacing[0]*grid_spacing[0]);
+        }
+        
+    }else{
+        value = (w[position] + w[position-N[0]] - (2.0*w[position - (2*N[0])]))/(grid_spacing[0]*grid_spacing[0]); 
+    }
+    return value;
+}
+
+double delta_phi(double *w, int position, int r_or_phi){
+    double value;
+    if(position%N[1]==0){
+        value = (w[position + 1] - w[position + N[1]-1])/(grid_spacing[1]);
+    }else if(position%N[1] ==(N[1]-1)){
+        value = (w[position-N[1]+1] - w[position-1])/(grid_spacing[1]);
+    }else{
+        value = (w[position + 1] - w[position-1])/(grid_spacing[1]);
+    }
+    return value;
+}
+
+double delta_r(double *w, int position, int r_or_phi){
+    double value;
+    if(position<=(N[1]-1)){     //reflecting boundary
+        //value = (2.0*w[position + N[1]])/(grid_spacing[0]);
+        value = 0.0;
+        //value = (2.0*w[position + N[1]])/(grid_spacing[0]);
+    }else{
+        value = (w[position] - w[position-N[1]])/(grid_spacing[0]); 
+    }
+    return value;
+}*/
+
+
+
+
+
+
+
+
 
 double delta_phi2(double *w, int position, int r_or_phi){
     double value;
@@ -159,7 +229,8 @@ void save_data(){
 
 double delta_pressure_r(int position){
     double value;
-    value = (pressure[position+N[0]] - pressure[position])/(grid_spacing[0]);
+    value = (pressure[position+N[0]]-pressure[position])/(grid_spacing[0]);
+    printf("pressure derivative = %f, uphi[%d]^2/radius = %f \n",value,position, U_PHI[position]*U_PHI[position]/radius[position/N[0]]);
     return value;
 }
 
@@ -207,8 +278,8 @@ int main(int argc, char **argv)
     CFL = 0.005;
     r1 = 1.0;
     r2 = 2.0;
-    N[0] = 100; // array size in each direction, N[0] = rdim
-    N[1] = 100; //N[1] = PhiDim
+    N[0] = 10; // array size in each direction, N[0] = rdim
+    N[1] = 10; //N[1] = PhiDim
     phi_1 = 0.0;
     phi_2 = 2.0*Pi;
     //phis go from phi = [0, 2pi]
@@ -221,9 +292,10 @@ int main(int argc, char **argv)
     //double turn_omega = 2.0;
     open_file();
 
-    
-    V_phi_inner = 5.0;
-    V_phi_outer = 10.0;
+    Wi = 5.0;
+    Wo = 5.0;
+    V_phi_inner = r1*Wi;
+    V_phi_outer = r2*Wo;
     time = 0.0;
     /* --fix these!!!
      Boundary conditions:
@@ -385,7 +457,7 @@ static void DrawGLScene()
     glFlush();
     glutSwapBuffers();
     
-    integrate_u();
+    //integrate_u();
 }
 
 

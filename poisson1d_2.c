@@ -19,7 +19,7 @@ FILE *output2;
 FILE *output3;
 
 #define Pi 3.14159265
-static double *d1uphi, *uphi_new, *source, *radius, *d1ur;
+static double *uphi_new, *source, *radius;
 static double Wi, Wo, r1, r2;
 static double grid_spacing[2];
 static int P_size;
@@ -51,24 +51,33 @@ static double Pinner;
     
 }*/
 
-double deriv_r(int position){
+double deriv_r(int position, double *d1uphi){
     double value;
     value = (d1uphi[position] - d1uphi[position-P_size])/(grid_spacing[0]); 
-    //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
+    //printf("derivative in r of uphi = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
     return value;
 }
 
-double deriv_phi(int position){
+double deriv_phi(int position, double *d1ur1){
     double value;
-    value = (d1ur[position] - d1ur[position-1])/(grid_spacing[1]); 
-    //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
+    double *d1ur  = &d1ur1[0];
+    if(position%P_size==0){
+        value = (d1ur[position+1] - d1ur[position+P_size - 1])/(grid_spacing[1]);
+    }else if(position%P_size ==(P_size-1)){
+        value = (d1ur[position-P_size + 1] - d1ur[position-1])/(grid_spacing[1]);
+    }else{
+        value = (d1ur[position+1] - d1ur[position-1])/(grid_spacing[1]); 
+    }
+    
+    //printf("derivative in phi of ur = %f, d1ur[%d] = %f \n", value, position, d1ur[position]);
     return value;
 }
 
-double delta_r_ur(int position){
+double delta_r_ur(int position, double *d1ur1){
     double value;
+    double *d1ur  = &d1ur1[0];
     value = (d1ur[position] - d1ur[position-P_size])/(grid_spacing[0]); 
-    //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
+    //printf("derivative of ur in r = %E, d1ur[%d] = %E \n", value, position, d1ur[position]);
     return value;
 }
 
@@ -79,7 +88,7 @@ void set_radius(){
     }
 }
 
-void fill_source(){
+void fill_source(double *d1uphi, double *d1ur){
     int i, position;
     for(i=0; i<(P_size*(P_size+1)); i++){
         position = i/P_size;
@@ -88,7 +97,8 @@ void fill_source(){
         }else if(i>=P_size && i<(2*P_size)){
             source[i] = d1uphi[i-P_size]*d1uphi[i-P_size]/radius[position];
         }else{
-            source[i] = 2.0*((deriv_r(i-P_size)*((d1uphi[i-P_size]/radius[position]) - (deriv_phi(i-P_size)/radius[position]))) - (delta_r_ur(i-P_size)*delta_r_ur(i-P_size)));
+            double value1 = delta_r_ur((i-P_size), d1ur);
+            source[i] = 2.0*((deriv_r((i-P_size), d1uphi)*((d1uphi[i-P_size]/radius[position]) - (deriv_phi((i-P_size), d1ur)/radius[position]))) - (value1*value1));
         }
         //printf("source[%d] = %f, radius = %f \n ", i, source[i], radius[position]);
 
@@ -187,7 +197,7 @@ void sparse(){
 }
 
 
-void poisson_pressure(double *d1uphi, double *d1ur, double *pressure, int P_size, double r1, double r2, double Wi, double Wo)
+void poisson_pressure(double *d1uphi, double *d1ur, double *pressure, int P_size2, double r12, double r22, double Wi1, double Wo1)
 // -----------------------------------------------------------------------------
 // This program uses the CSparse library to solve the matrix equation A x = b.
 // The values used for the coefficient 'b' and the matrix 'A' are totally
@@ -197,7 +207,11 @@ void poisson_pressure(double *d1uphi, double *d1ur, double *pressure, int P_size
 {
     //for a 100x100 array, but have 1 ghost cell  for bcs
     //have a 100x100 pressure aray
-    //P_size = 100;
+    P_size = P_size2;
+    Wi = Wi1;
+    Wo = Wo1;
+    r1 = r12;
+    r2 = r22;
     int i;
 
     /*Wi = 5.0;
@@ -226,7 +240,7 @@ void poisson_pressure(double *d1uphi, double *d1ur, double *pressure, int P_size
     grid_spacing[1] = (2.0*Pi)/P_size;
     set_radius();
     
-    fill_source();
+    fill_source(d1uphi, d1ur);
     
     sparse();
 
@@ -237,7 +251,7 @@ void poisson_pressure(double *d1uphi, double *d1ur, double *pressure, int P_size
     
     for (i=0; i<(P_size*(P_size+1)); i++) {
         //printf("source[%d] = %+5.4e\n", i, source[i]);
-        pressure[i] = source[i];
+        //pressure[i] = source[i];
         
         if(i%P_size==0){
             
@@ -255,6 +269,15 @@ void poisson_pressure(double *d1uphi, double *d1ur, double *pressure, int P_size
         
         fprintf(output3, "%+5.4e \n", uphi_new[i]);
     }
+    
+    
+    for (i=0; i<(P_size*(P_size+1)); i++) {
+        //printf("source[%d] = %+5.4e\n", i, source[i]);
+        pressure[i] = source[i];
+        
+    }
+    fclose(output3);
+    fclose(output);
 
     
 
