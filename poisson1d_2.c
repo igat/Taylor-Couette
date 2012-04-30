@@ -62,11 +62,9 @@ double deriv_phi(int position, double *d1ur1){
     double value;
     double *d1ur  = &d1ur1[0];
     if(position%P_size==0){
-        value = (d1ur[position+1] - d1ur[position+P_size - 1])/(grid_spacing[1]);
-    }else if(position%P_size ==(P_size-1)){
-        value = (d1ur[position-P_size + 1] - d1ur[position-1])/(grid_spacing[1]);
+        value = (d1ur[position] - d1ur[position+P_size - 1])/(grid_spacing[1]);
     }else{
-        value = (d1ur[position+1] - d1ur[position-1])/(grid_spacing[1]); 
+        value = (d1ur[position] - d1ur[position-1])/(grid_spacing[1]); 
     }
     
     //printf("derivative in phi of ur = %f, d1ur[%d] = %f \n", value, position, d1ur[position]);
