@@ -194,8 +194,8 @@ int main(int argc, char **argv)
     CFL = 0.005;
     r1 = 1.0;
     r2 = 2.0;
-    N[0] = 100; // array size in each direction, N[0] = rdim
-    N[1] = 100; //N[1] = PhiDim
+    N[0] = 10; // array size in each direction, N[0] = rdim
+    N[1] = 10; //N[1] = PhiDim
     phi_1 = 0.0;
     phi_2 = 2.0*Pi;
     //phis go from phi = [0, 2pi]
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
     open_file();
 
     
-    V_phi_inner = 0.0;
+    V_phi_inner = 5.0;
     V_phi_outer = 10.0;
     time = 0.0;
     /* --fix these!!!
@@ -240,6 +240,8 @@ int main(int argc, char **argv)
 
 
     free(radius);
+    free(d1uphi);
+
 
     free(U_PHI);
     free(U_R);
@@ -433,6 +435,7 @@ void integrate_u(){
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
+            //printf("vphi[%d]^2/radius = %f \n ", position, U_PHI[position]*U_PHI[position]/radius[i]);
             if(i==0){
                 ur1[position] = 0.0;
                 up1[position] = V_phi_inner;
@@ -514,12 +517,7 @@ void integrate_u(){
             U_PHI[position] = up3[position];
         }
     }
-    free(up3);
-    free(up2);
-    free(up1);
-    free(ur3);
-    free(ur2);
-    free(ur1);
+    
     time +=tSTEP;
     printf("Current time = %f , difference = %E \n", time, difference);
     if (TextureMode == 'r') {
@@ -534,5 +532,11 @@ void integrate_u(){
         exit(0);
         
     }
+    free(up3);
+    free(up2);
+    free(up1);
+    free(ur3);
+    free(ur2);
+    free(ur1);
     
 }
