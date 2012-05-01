@@ -278,8 +278,8 @@ int main(int argc, char **argv)
     CFL = 0.005;
     r1 = 1.0;
     r2 = 2.0;
-    N[0] = 10; // array size in each direction, N[0] = rdim
-    N[1] = 10; //N[1] = PhiDim
+    N[0] = 100; // array size in each direction, N[0] = rdim
+    N[1] = 100; //N[1] = PhiDim
     phi_1 = 0.0;
     phi_2 = 2.0*Pi;
     //phis go from phi = [0, 2pi]
@@ -547,6 +547,11 @@ void integrate_u(){
             //printf("L1 = %f, L2 = %f \n",L1, L2);
         }
     }
+    
+    poisson_pressure(up1, ur1, pressure, N[0], r1, r2, V_phi_inner/r1, V_phi_outer/r2);
+
+    
+    
     //second integration now
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
@@ -572,6 +577,8 @@ void integrate_u(){
             
         }
     }
+    poisson_pressure(up2, ur2, pressure, N[0], r1, r2, V_phi_inner/r1, V_phi_outer/r2);
+
     //third integration
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
