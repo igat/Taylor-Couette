@@ -148,8 +148,8 @@ void save_data(){
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            fprintf(output, "%f \n", U_PHI[position]);
-            fprintf(output3, "%f \n", U_R[position]);
+            fprintf(output, "%E \n", U_PHI[position]);
+            fprintf(output3, "%E \n", U_R[position]);
             /*if(j==(N[1]/2)){
                 fprintf(output, "%f  %f  \n", radius[i], U_PHI[position]);
             }*/
@@ -233,7 +233,13 @@ double delta_pressure_r(int position){
 
 double delta_pressure_phi(int position){
     double value;
-    value = (Pressure[position+N[0]+1] - Pressure[position + N[0] - 1])/(grid_spacing[1]);
+    if(position%N[1]==0){
+        value = (Pressure[position+N[0]+1] - Pressure[position + (2*N[0]) - 1])/(grid_spacing[1]);
+    }else if(position%N[1] ==(N[1]-1)){
+        value = (Pressure[position+1] - Pressure[position + N[0] - 1])/(grid_spacing[1]);
+    }else{
+        value = (Pressure[position+N[0]+1] - Pressure[position + N[0] - 1])/(grid_spacing[1]);
+    }
     return value;
 }
 
