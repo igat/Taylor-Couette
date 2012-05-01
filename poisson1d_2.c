@@ -58,7 +58,12 @@ double delta_r(int position){
 
 double delta_phi(int position){
     double value;
-    value = (d1ur[position] - d1ur[position-1])/(grid_spacing[1]); 
+    if(position%P_size==0){
+        value = (d1ur[position] - d1ur[position+P_size - 1])/(grid_spacing[1]);
+    }else{
+        value = (d1ur[position] - d1ur[position-1])/(grid_spacing[1]); 
+    }
+    //value = (d1ur[position] - d1ur[position-1])/(grid_spacing[1]); 
     //printf("derivative = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
     return value;
 }
