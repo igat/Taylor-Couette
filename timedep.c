@@ -236,7 +236,13 @@ double delta_pressure_r(int position){
 
 double delta_pressure_phi(int position){
     double value;
-    value = (pressure[position+N[0]+1] - pressure[position + N[0] - 1])/(grid_spacing[1]);
+    if(position%N[1]==0){
+        value = (pressure[position+N[0]+1] - pressure[position + (2*N[0]) - 1])/(grid_spacing[1]);
+    }else if(position%N[1] ==(N[1]-1)){
+        value = (pressure[position+1] - pressure[position + N[0] - 1])/(grid_spacing[1]);
+    }else{
+        value = (pressure[position+N[0]+1] - pressure[position + N[0] - 1])/(grid_spacing[1]);
+    }
     return value;
 }
 
@@ -275,7 +281,7 @@ void open_file(){
 
 int main(int argc, char **argv)
 {
-    CFL = 0.005;
+    CFL = 0.001;
     r1 = 1.0;
     r2 = 2.0;
     N[0] = 100; // array size in each direction, N[0] = rdim
