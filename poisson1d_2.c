@@ -26,8 +26,8 @@ static double Pinner;
 
 
 void open_file(){
-    output2 = fopen("Uphi.txt", "rt");
-    output1 = fopen("Ur.txt", "rt");
+    output2 = fopen("u_phi_timedep.txt", "rt");
+    output1 = fopen("u_r_timedep.txt", "rt");
 
     char line[80];
     int i=0;
@@ -202,11 +202,11 @@ int main()
 {
     //for a 100x100 array, but have 1 ghost cell  for bcs
     //have a 100x100 pressure aray
-    P_size = 100;
+    P_size = 10;
     int i;
 
     Wi = 5.0;
-    Wo = 10.0;
+    Wo = 5.0;
     r1 = 1.0;
     r2 = 2.0;
     Pinner = 1.0;
@@ -239,9 +239,10 @@ int main()
     
     for (i=0; i<(P_size*(P_size+1)); i++) {
         //printf("source[%d] = %+5.4e\n", i, source[i]);
+        fprintf(output, "%+5.4e \n", source[i]);
         if(i%P_size==0){
             
-            fprintf(output, "%+5.4e \n", source[i]);
+            //fprintf(output, "%+5.4e \n", source[i]);
         }
         
     }
