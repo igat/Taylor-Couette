@@ -34,7 +34,7 @@ FILE *output3;
 static double r1, r2;
 static int N[2];
 static double phi_1, phi_2;
-static double *U_R, *U_PHI;
+static double *U_R, *U_PHI, *Pressure;
 static double *d1uphi;
 //static double *Lr, *Lphi;
 static double grid_spacing[2];
@@ -142,17 +142,21 @@ double laplace(double *w, int position, int r_or_phi, int r_pos){
     return value;
 }
 void save_data(){
-    output=fopen("u_phi32.txt", "w");
+    output=fopen("u_phi_timedep.txt", "w");
+    output3 = fopen("u_r_timedep.txt", "w");
     int i, j, position;
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            if(j==(N[1]/2)){
+            fprintf(output, "%f \n", U_PHI[position]);
+            fprintf(output3, "%f \n", U_R[position]);
+            /*if(j==(N[1]/2)){
                 fprintf(output, "%f  %f  \n", radius[i], U_PHI[position]);
-            }
+            }*/
         }
         
     }
+    fclose(output3);
     fclose(output);
 }
 
@@ -187,6 +191,38 @@ void open_file(){
     fclose(output2);
     
 }
+void read_in_us_and_pressure(){
+    output = fopen("u_r_timedep.txt", "rt");
+    output2 = fopen("u_phi_timedep.txt", "rt");
+    output3 = fopen("pressure.txt", "rt");
+    char line[80];
+    int i=0;
+    
+    while(fgets(line, 80, output3) !=NULL){
+        sscanf(line, "%lf",&Pressure[i]);
+        
+        //printf("%f, i=%d \n", d1uphi[i], i);
+        i+=1;
+    }
+    fclose(output3);
+    i=0;
+    while(fgets(line, 80, output2) !=NULL){
+        sscanf(line, "%lf",&U_PHI[i]);
+        
+        //printf("%f, i=%d \n", d1uphi[i], i);
+        i+=1;
+    }
+    fclose(output2);
+    i=0;
+    while(fgets(line, 80, output) !=NULL){
+        sscanf(line, "%lf",&U_R[i]);
+        
+        //printf("%f, i=%d \n", d1uphi[i], i);
+        i+=1;
+    }
+    fclose(output);
+    
+}
 
 
 int main(int argc, char **argv)
@@ -204,6 +240,8 @@ int main(int argc, char **argv)
     U_R  = (double*) malloc(N[0]*N[1]*sizeof(double));
     U_PHI  = (double*) malloc(N[0]*N[1]*sizeof(double));
     d1uphi = (double*) malloc(N[0]*sizeof(double));
+    Pressure  = (double*) malloc((N[0]+1)*N[1]*sizeof(double));
+
     //double turn_omega = 2.0;
     open_file();
 
@@ -240,6 +278,7 @@ int main(int argc, char **argv)
 
 
     free(radius);
+    free(Pressure);
     free(d1uphi);
 
 
@@ -435,7 +474,7 @@ void integrate_u(){
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            printf("vphi[%d]^2/radius = %f \n ", position, U_PHI[position]*U_PHI[position]/radius[i]);
+            //printf("vphi[%d]^2/radius = %f \n ", position, U_PHI[position]*U_PHI[position]/radius[i]);
             if(i==0){
                 ur1[position] = 0.0;
                 up1[position] = V_phi_inner;
