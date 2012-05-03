@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     //V1 = r1*omega;
     //V2 = r2*omega;
     
-    V1 = -5.0;
+    V1 = 5.0;
     V2 = 10.0;
     
     double s, s_old;
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
     for(g = 0; g<(Rdim); g++)
     {
         
-        fprintf(output, "%f \n", u_phi[g]);
+        fprintf(output, "%f\n", u_phi[g]);
         fprintf(output3, "%f \n", 0.0);
 
         fprintf(output2, "%f \n", (u_phi[g]*u_phi[g]));
