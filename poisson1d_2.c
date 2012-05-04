@@ -140,7 +140,7 @@ void sparse(){
     for (i=0; i<M; i++) {
         double radius1 = radius[i/P_size];
         //printf("radius = %f, i = %d \n", radius1, i );
-        double a, b, c, d, e, f, g;
+        double a, b, c, d, e1, f, g;
         double deltar2 = 1.0/(grid_spacing[0]*grid_spacing[0]);
         double deltar_r = 1.0/(radius1*grid_spacing[0]);     
         double deltaphi = 1.0/(radius1*radius1*grid_spacing[1]*grid_spacing[1]);
@@ -149,7 +149,7 @@ void sparse(){
         b = (-2.0*deltar2) - (deltar_r);
         c = deltaphi;
         d = deltar2 + deltar_r - (2.0*deltaphi);
-        e = deltaphi;
+        e1 = deltaphi;
         //printf("i = %d, a = %f, b = %f, c = %f, d = %f, e = %f, radius = %f \n",i, a, b, c, d, e, radius1);
         
         
@@ -173,13 +173,13 @@ void sparse(){
             
             if(i%P_size==0){
                 cs_entry(triplet, i, i+(P_size-1), c);
-                cs_entry(triplet, i, i+1, e);
+                cs_entry(triplet, i, i+1, e1);
             }else if((i+1)%P_size==0){
                 cs_entry(triplet, i, i-1, c);
-                cs_entry(triplet, i, i-(P_size-1), e);
+                cs_entry(triplet, i, i-(P_size-1), e1);
             }else{
                 cs_entry(triplet, i, i-1, c);
-                cs_entry(triplet, i, i+1, e);
+                cs_entry(triplet, i, i+1, e1);
             }
             /*if(i%P_size==0){
                 cs_entry(triplet,  i+P_size-1,i, c);
