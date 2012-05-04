@@ -23,7 +23,7 @@
 
 
 #define Pi (4.0*atan(1.0))
-#define max_iterations 1000
+#define max_iterations 30
 #define max_iterations1 10
 
 
@@ -277,10 +277,25 @@ double delta_r_ur(int position, double *d1ur1){
     return value;
 }
 
+double delta_r_phi(int position, double *d1uphi){
+    double *value_new = (double*) malloc(N[0]*N[1]*sizeof(double));
+    double value;
+    
+    int i, j, position2;
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position2 = (i*N[1]) + j;
+            value_new[position2] = delta_phi(d1uphi, position2, 2);
+        }
+    }
+    value = deriv_r(position, value_new);
 
+    free(value_new);
+    return value;
+}
 
-void relax_pressure(double *ur, double *uphi, int first_time){
-    const double EPS = 1.0e-6;
+void relax_pressure(double *ur, double *uphi){
+    const double EPS = 1.0e-16;
     double resid_sum, value ;
     for(resid=0; resid<max_iterations; resid++){
         //double *pressure_new = (double*) malloc(N[0]*N[1]*sizeof(double));
@@ -329,16 +344,16 @@ void relax_pressure(double *ur, double *uphi, int first_time){
                     P_new = 1.0;
                 }else if(i==1){
                     source = uphi[position-N[1]]*uphi[position-N[1]]/radius[i-1];
-                    residual1 = Pressure[position] - Pressure[position-N[1]] - (grid_spacing[0]*source);
+                    residual1 = Pressure[position] - Pressure[position-N[1]] - (grid_spacing[0]*source/omega);
                     P_new = Pressure[position] - (omega*residual1);
                     resid_sum+=fabs(residual1);
                 }else if(i==(N[0]+1)){
                     source = r2*Wo*Wo;
-                    residual1 = Pressure[position] - Pressure[position-N[1]] - (grid_spacing[0]*source);
+                    residual1 = Pressure[position] - Pressure[position-N[1]] - (grid_spacing[0]*source/omega);
                     P_new = Pressure[position] - (omega*residual1);
                     resid_sum+=fabs(residual1);
                 }else{
-                    source = (2.0)*(((deriv_r((position-N[1]), uphi)/radius[i-1])*(uphi[(position-N[1])] - deriv_phi((position-N[1]), ur))) - (deriv_r_ur((position-N[1]), ur)*deriv_r_ur((position-N[1]), ur)));
+                    source = (2.0)*(((deriv_r((position-N[1]), uphi)/radius[i-1])*(uphi[(position-N[1])] - deriv_phi((position-N[1]), ur))) - (delta_r_ur((position-N[1]), ur)*delta_r_ur((position-N[1]), ur)) - ((1.0/(Re*radius[i-1]*radius[i-1]))*(delta_r_ur((position-N[1]), ur) + (delta_r_phi((position-N[1]), uphi)) + (delta_phi2(ur, (position - N[1]), 1)/radius[i-1]))));
                     a = grid_spacing[1]*grid_spacing[1]*radius[i-1]*radius[i-1];
                     b = (-2.0*a) - (grid_spacing[0]*grid_spacing[1]*grid_spacing[1]*radius[i-1]);
                     c = grid_spacing[0]*grid_spacing[0];
@@ -359,7 +374,7 @@ void relax_pressure(double *ur, double *uphi, int first_time){
                     Piminus2 = Pressure[position - (2*N[1])];
                     
                     
-                    residual1 = (Piminus2*a) + (Piminus1*b) + (Pjplus1*c) + (Pjminus1*d) + (Pressure[position]*g) - (f*source);
+                    residual1 = (Piminus2*a) + (Piminus1*b) + (Pjplus1*c) + (Pjminus1*d) + (Pressure[position]*g) - (f*source/omega);
                     
                     P_new = Pressure[position] - (omega*residual1/g);
                     resid_sum +=fabs(residual1);
@@ -421,21 +436,25 @@ void relax_pressure(double *ur, double *uphi, int first_time){
         }
         //printf("residual here = %E, resid = %d \n", resid_sum, resid);
         residual[resid] = resid_sum/(N[0]*N[1]);
-        free(pressure_new);
+        //free(pressure_new);
         //if(resid=10) printf("residual here = %E, eps = %E \n", residual[resid], EPS);
         if(resid>=2){
-            double value1 = residual[1]*EPS;
+            double value1 = residual[0]*EPS;
             //printf("value1 = %E \n", value1);
             if(residual[resid]<=value1){
                 residual[max_iterations-1] = residual[resid];
                 printf("here!! residual here = %E, resid = %d \n", residual[resid], resid);
-                resid = max_iterations;
+                //resid = max_iterations;
+                return;
                 
             
             }
         }
-        resid_sum = 0.0;
+        //resid_sum = 0.0;
+        visual_set_texdata(Pressure);
+        
     }
+    
     printf("residual here = %E, resid = %d\n", residual[resid-1], resid);
     printf("Check!, Pressure[10] - Pressure[9] = %f\n",Pressure[10] - Pressure[9]);
     int i, j, position;
@@ -443,7 +462,7 @@ void relax_pressure(double *ur, double *uphi, int first_time){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
             if(j==(N[1]/2)){
-                printf("Pressure[%d] = %f \n",position, Pressure[position]);
+                //printf("Pressure[%d] = %f \n",position, Pressure[position]);
             }
         }
     }
@@ -506,8 +525,8 @@ int main(int argc, char **argv)
     open_file();
 
     
-    Wi = 0.0;
-    Wo = 0.0;
+    Wi = 5.0;
+    Wo = 5.0;
     V_phi_inner = r1*Wi;
     V_phi_outer = r2*Wo;
     time = 0.0;
@@ -527,7 +546,7 @@ int main(int argc, char **argv)
     //Re = V_phi_outer*grid_spacing[1]/nu; //Reynolds number
     Re = 1.0;
     double rho;
-    rho = cos(Pi/N[0]);
+    rho = cos(Pi/(N[0]-98.0));
     omega= 2.0/(1.0+sqrt(1.0-(rho*rho)));
     printf("Re = %f, omega = %f \n", Re, omega);
     resid = 0;
@@ -639,7 +658,7 @@ void visual_set_texdata(double *z)
             TextureData[3*m+2] = b;
         }
     }
-    printf("texture data max/min = (%e, %e)\n", maxval, minval);
+    printf("texture data max/min = (%16.12e, %16.12e)\n", maxval, minval);
     
     glBindTexture(GL_TEXTURE_2D, TextureMap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -741,10 +760,10 @@ void integrate_u(){
     double *up3 = (double*) malloc(N[0]*N[1]*sizeof(double));
     double L1r, L2r, L1phi, L2phi;
     
-    relax_pressure();
+    relax_pressure(U_R, U_PHI);
     
     save_data();
-    return;
+    //return;
     
     tSTEP = CFL*grid_spacing[0]*grid_spacing[1]/((V_phi_outer*V_phi_outer) + (V_phi_inner*V_phi_inner));
     //V_phi_inner += acceleration*tSTEP;

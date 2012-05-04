@@ -77,7 +77,7 @@ void find_s(double s){
 int main(int argc, char **argv)
 {
     
-    Rdim = 160;
+    Rdim = 100;
     double r1, r2;
     r1 = 1.0;
     r2 = 2.0;
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     //V1 = r1*omega;
     //V2 = r2*omega;
     
-    V1 = 0.0;
+    V1 = 5.0;
     V2 = 10.0;
     
     double s, s_old;
@@ -107,11 +107,11 @@ int main(int argc, char **argv)
 
     int i, g;
     for(i=0; i<max_iterations; i++){
-        if(u_phi[Rdim-1]==V2){
+        if(u_phi[Rdim]==V2){
             i=max_iterations;
         }else{
             s_old = s;
-            s = s_old - ((u_phi[Rdim-1] - V2)/U[Rdim-1]);
+            s = s_old - ((u_phi[Rdim] - V2)/U[Rdim]);
             //printf("s_old = %f, s_new = %f, u_phi[RDIM] = %f, U[rdim] = %f \n", s_old, s, u_phi[Rdim], U[Rdim]);
             find_s(s);
         }
