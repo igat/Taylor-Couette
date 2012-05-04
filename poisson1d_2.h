@@ -22,12 +22,17 @@ double delta_r_ur(int position, double *d1ur1);
 
 void set_radius();
 
+void deriv_phi_new(double *new_uphi, double *old_uphi);
+
+double deriv_phi2(double *w, int position);
+
+
 void fill_source(double *d1uphi, double *d1ur);
 
 void finite_difference();
 
 void sparse();
 
-void poisson_pressure(double *d1uphi2, double *d1ur2, double *pressure, int P_size, double r1, double r2, double Wi, double Wo);
+void poisson_pressure(double *d1uphi2, double *d1ur2, double *pressure, int P_size, double r1, double r2, double Wi, double Wo, double Re2);
 
 #endif
