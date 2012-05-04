@@ -91,16 +91,22 @@ void set_radius(){
 
 void fill_source(double *d1uphi, double *d1ur){
     int i, position;
-    for(i=0; i<(P_size*(P_size+1)); i++){
+    for(i=0; i<(P_size*(P_size+2)); i++){
         position = i/P_size;
         if(i<P_size){
             source[i] = Pinner;
+            printf("pinner = %f \n", Pinner);
         }else if(i>=P_size && i<(2*P_size)){
             source[i] = d1uphi[i-P_size]*d1uphi[i-P_size]/radius[position];
+        }else if(i>=(P_size*(P_size+1)) ){
+            source[i] = r2*Wo*Wo;
         }else{
+            //printf("radius[%d] = %f \n", position, radius[position]);
             source[i] = 2.0*((deriv_r((i-P_size), d1uphi)*((d1uphi[i-P_size]/radius[position]) - (deriv_phi((i-P_size), d1ur)/radius[position]))) - (delta_r_ur((i-P_size), d1ur)*delta_r_ur((i-P_size), d1ur)));
+            //source[i] = 0.0;
         }
-        //printf("source[%d] = %16.12e, radius = %f \n ", i, source[i], radius[position]);
+        //source[i] = 1.0;
+        printf("source[%d] = %16.12e, radius = %f \n ", i, source[i], radius[position]);
 
     }
     
@@ -120,8 +126,8 @@ void finite_difference(){
 
 void sparse(){
     
-    const int M = P_size*(P_size+1);
-    const int N = P_size*(P_size+1);
+    const int M = P_size*(P_size+2);
+    const int N = P_size*(P_size+2);
     int i;
 
     struct cs_sparse *triplet = cs_spalloc(M, N, 100*N, 1, 1);
@@ -156,6 +162,10 @@ void sparse(){
         }else if(i>=P_size && i<(2*P_size)){
             
             
+            cs_entry(triplet, i, (i-P_size), g);
+            cs_entry(triplet, i, i, f);
+            //printf(" d = %f, b = %f position i-P_size = %d , i = %d \n",d, b, i-P_size, i);
+        }else if(i>=(P_size*(P_size+1))){
             cs_entry(triplet, i, (i-P_size), g);
             cs_entry(triplet, i, i, f);
             //printf(" d = %f, b = %f position i-P_size = %d , i = %d \n",d, b, i-P_size, i);
@@ -198,7 +208,7 @@ void sparse(){
     // overwritten to contain the solution vector 'x'.
     struct cs_sparse *matrix = cs_compress(triplet);
     //cs_print(matrix, 0);
-    cs_lusol(0, matrix, source, 1e-10);
+    cs_lusol(0, matrix, source, 1e-15);
     cs_spfree(triplet);
     cs_spfree(matrix);
     
@@ -206,6 +216,29 @@ void sparse(){
     
 
 }
+
+void check_pressure(){
+    int i, j, position;
+    for(i=0; i<(P_size + 2); i++){
+        for(j=(P_size/2); j<P_size; j++){
+            position = (i*P_size) + j;
+            double value = source[position-1] - source[position];
+            if(fabs(value)<=2e-2){
+                source[position] = source[position-1];
+            }
+        }
+    }
+    for(i=0; i<(P_size + 2); i++){
+        for(j=(P_size/2); j>-1; j--){
+            position = (i*P_size) + j;
+            double value = source[position+1] - source[position];
+            if(fabs(value)<=2e-2){
+                source[position] = source[position+1];
+            }
+        }
+    }
+}
+
 
 
 void poisson_pressure(double *d1uphi2, double *d1ur2, double *pressure, int P_size2, double r12, double r22, double Wi1, double Wo1)
@@ -237,7 +270,7 @@ void poisson_pressure(double *d1uphi2, double *d1ur2, double *pressure, int P_si
     d1ur = (double*) malloc(P_size*P_size*sizeof(double));*/
 
 
-    source = (double*) malloc(P_size*(P_size+1)*sizeof(double));
+    source = (double*) malloc(P_size*(P_size+2)*sizeof(double));
     
     Pinner = 1.0; 
     radius = (double*) malloc((P_size+1)*sizeof(double)); 
@@ -249,28 +282,30 @@ void poisson_pressure(double *d1uphi2, double *d1ur2, double *pressure, int P_si
     
     grid_spacing[0] = (r2-r1)/P_size;
     grid_spacing[1] = (2.0*Pi)/P_size;
+    //printf("dr = %f, dphi = %f \n", grid_spacing[0], grid_spacing[1]);
     set_radius();
     
     fill_source(d1uphi2, d1ur2);
     sparse();
+    //check_pressure();
 
     
     
     // Print the solution vector.
     output=fopen("pressure.txt", "w");
     
-    for (i=0; i<(P_size*(P_size+1)); i++) {
-        //printf("source[%d] = %16.12e\n", i, source[i]);
+    for (i=0; i<(P_size*(P_size+2)); i++) {
+        fprintf(output, " %16.12e ",source[i]);
         //pressure[i] = source[i];
         
-        if(i%P_size==0){
-            
-            fprintf(output, "%f \n", source[i]);
+        if(i%P_size==P_size-1){
+            fprintf(output, "\n");
+            //fprintf(output, "%f \n", source[i]);
         }
         
     }
     
-    for (i=0; i<(P_size*(P_size+1)); i++) {
+    for (i=0; i<(P_size*(P_size+2)); i++) {
         //printf("source[%d] = %+5.4e\n", i, source[i]);
         pressure[i] = source[i];
         
