@@ -261,7 +261,7 @@ void pressure_pertubations(){
 
 int main(int argc, char **argv)
 {
-    CFL = 0.15;
+    CFL = 0.0005;
     r1 = 1.0;
     r2 = 2.0;
     N[0] = 100; // array size in each direction, N[0] = rdim
@@ -279,7 +279,7 @@ int main(int argc, char **argv)
     open_file();
 
     Wi = 0.0;
-    Wo = 0.0;
+    Wo = 5.0;
     V_phi_inner = r1*Wi;
     V_phi_outer = r2*Wo;
     time = 0.0;
@@ -441,7 +441,7 @@ static void DrawGLScene()
     glFlush();
     glutSwapBuffers();
     
-    //integrate_u();
+    integrate_u();
 }
 
 
@@ -517,11 +517,11 @@ void integrate_u(){
     }
     
     save_data();
-    return;
+    //return;
 
 
 
-    tSTEP = CFL*grid_spacing[0]*grid_spacing[1]/((V_phi_outer*V_phi_outer) + (V_phi_inner*V_phi_inner));
+    tSTEP = CFL*grid_spacing[0]*grid_spacing[1]/((V_phi_outer) + (V_phi_inner));
     //V_phi_inner += acceleration*tSTEP;
     int i, j, position;
     for(i=0; i<N[0]; i++){

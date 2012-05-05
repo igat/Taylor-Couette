@@ -123,7 +123,7 @@ void fill_source(double *d1uphi, double *d1ur){
         position = i/P_size;
         if(i<P_size){
             source[i] = Pinner;
-            printf("pinner = %f \n", Pinner);
+            //printf("pinner = %f \n", Pinner);
         }else if(i>=P_size && i<(2*P_size)){
             source[i] = d1uphi[i-P_size]*d1uphi[i-P_size]/radius[position];
         }else if(i>=(P_size*(P_size+1)) ){
@@ -134,7 +134,7 @@ void fill_source(double *d1uphi, double *d1ur){
             //source[i] = 0.0;
         }
         //source[i] = 1.0;
-        printf("source[%d] = %16.12e, radius = %f \n ", i, source[i], radius[position]);
+        //printf("source[%d] = %16.12e, radius = %f \n ", i, source[i], radius[position]);
 
     }
     free(value_new);
