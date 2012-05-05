@@ -22,8 +22,8 @@
 
 
 
-#define Pi (4.0*atan(1.0))
-#define max_iterations 30
+#define Pi 3.1415926535897932384626433832795028841971693993751058209
+#define max_iterations 500
 #define max_iterations1 10
 
 
@@ -60,45 +60,18 @@ void initialize_u(){
 
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            /*if(i==0){
-                U_PHI[position] = V_phi_inner;
-                //Pressure[position] = 1.0; //set some pressure at the origin
-            }else if(i==(N[0]-1)){
-                U_PHI[position] = V_phi_outer;
-                //Pressure[position] = Pressure[position - N[1]] + (Re*U_PHI[position]*U_PHI[position]*grid_spacing[0]/radius[i]);
-            }else{
-                U_PHI[position] = 0.0;
-                //Pressure[position] = Pressure[position - N[1]] + (Re*U_PHI[position]*U_PHI[position]*grid_spacing[0]/radius[i]);
-            }*/
             U_PHI[position] = d1uphi[i];
             U_R[position] = 0.0;
-            //Pressure[position] = 0.0;
-            //printf("Psi[%d] = %f\n", position, Psi0[position]);
-            //printf("omega[%d] = %f\n", position, Omega0[position]);
-            //printf("uphi[i-1] = %f, uphi[i+1] = %f \n",u_phi[i-1], u_phi[i+1]);
-            //if(j==(N[1]/2)) printf("Pressure[%d] = %f \n", position, Pressure[position]);
 
         }
     
     }
     //not quite sure if this next part is right
-    for(i=0; i<N[0]+2; i++){
+    for(i=0; i<(N[0]+2); i++){
         //radius[i] = r1 + (i*grid_spacing[0]);
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
             Pressure[position] = 1.0;
-            
-            /*if(i==0){
-                Pressure[position] = 1.0;
-            }else if(i==1){
-                Pressure[position]= (-grid_spacing[0]*Re*U_PHI[position-N[1]]*U_PHI[position-N[1]]/radius[i-1]) + 2.0;
-                //printf("Uphi = %f, Pressure[%d] = %f, value = %f \n",U_PHI[position], position, Pressure[position], value);
-            }else{
-                Pressure[position] = (-grid_spacing[0]*Re*U_PHI[position-N[1]]*U_PHI[position-N[1]]/radius[i-1]) + Pressure[position- (2*N[1])];
-            }*/
-            
-            //if(j==(N[1]/2)) printf("Uphi = %f, Pressure[%d] = %f \n",U_PHI[position], position, Pressure[position]);
-            
         }
         
     }
@@ -188,15 +161,16 @@ double laplace(double *w, int position, int r_or_phi, int r_pos){
     value = (delta_r(w, position, r_or_phi)/radius[r_pos])+ delta_r2(w, position, r_or_phi) + (delta_phi2(w, position, r_or_phi)/(radius[r_pos]*radius[r_pos]));
     return value;
 }
-void save_data(){
-    output=fopen("Pressure_timedep.txt", "w");
-    output2=fopen("ur_timedep.txt", "w");
-    output3 = fopen("uphi_timedep.txt", "w");
+
+void save_data(double *ur, double *uphi){
+    output=fopen("Pressure_timedep2.txt", "w");
+    output2=fopen("ur_timedep2.txt", "w");
+    output3 = fopen("uphi_timedep2.txt", "w");
     int i, j, position;
     for(i=0; i<(N[0]+2); i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            fprintf(output, "%f  ", Pressure[position]);
+            fprintf(output, "%16.12e  ", Pressure[position]);
             if(j==(N[1]-1)){
                 fprintf(output, "\n");
                 //fprintf(output, "%f  %f  \n", radius[i], U_PHI[position]);
@@ -208,8 +182,8 @@ void save_data(){
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            fprintf(output2, "%E  ", U_R[position]);
-            fprintf(output3, "%E  ", U_PHI[position]);
+            fprintf(output2, "%16.12e  ", ur[position]);
+            fprintf(output3, "%16.12e  ", uphi[position]);
             
             if(j==(N[1]-1)){
                 fprintf(output2, "\n");
@@ -277,6 +251,16 @@ double delta_r_ur(int position, double *d1ur1){
     return value;
 }
 
+void deriv_phi_first(double *value_new, double *d1uphi){
+    int i, j, position2;
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position2 = (i*N[1]) + j;
+            value_new[position2] = delta_phi(d1uphi, position2, 2);
+        }
+    }
+}
+
 double delta_r_phi(int position, double *d1uphi){
     double *value_new = (double*) malloc(N[0]*N[1]*sizeof(double));
     double value;
@@ -295,55 +279,28 @@ double delta_r_phi(int position, double *d1uphi){
 }
 
 void relax_pressure(double *ur, double *uphi){
-    const double EPS = 1.0e-16;
-    double resid_sum, value ;
+    const double EPS = 2.0e-16;
+    double resid_sum;
+    
+    double *value_new = (double*) malloc(N[0]*N[1]*sizeof(double));
+    deriv_phi_first(value_new, uphi);
+    
     for(resid=0; resid<max_iterations; resid++){
         //double *pressure_new = (double*) malloc(N[0]*N[1]*sizeof(double));
-        double residual1, e_ij, source;
+        double residual1, source;
         double Piminus2, Piminus1, Pjplus1, Pjminus1;
         int i, j, position;
-        double term1, term2, term3;
         double P_new;
         double a, b, c, d, f, g;
         resid_sum = 0.0;
         for(i=0; i<(N[0]+2); i++){
             for(j=0; j<N[1]; j++){
                 position = (i*N[1]) + j;
-                /*if(first_time==5){
-                    source = 2.0*Re*((delta_r(uphi, position, 2)*((uphi[position]/radius[i])))-(uphi[position]*uphi[position]/(2.0*radius[i]*radius[i])));
-                    residual1 = (Re*2.0*uphi[position]*delta_r(uphi, position, 2)/radius[i])-(source/omega);
-                    //should i hard code dp/dr = Re*uphi^2/r?
-                    e_ij = 2.0*((1.0/(grid_spacing[0]*grid_spacing[0])) );
-                    pressure_new[position] = Pressure[position] + (omega*residual1/e_ij);
-                    //printf("source = %E, residual = %f \n", source, residual1);
-                    Pressure[position] = pressure_new[position];
-                    resid_sum += fabs(residual1);
-                }else{
-                    //source = (2.0*Re/radius[i])*((delta_phi(uphi,position, 2)*(delta_r(ur,position, 1) - (ur[position]/(2.0*radius[i])))) + (delta_phi(ur, position, 1)*((uphi[position]/(2.0*radius[i])) - delta_r(uphi, position, 2))));
-                    source = (2.0*Re/radius[i])*((delta_r(ur, position, 1)*(ur[position] + delta_phi(uphi, position, 2))) + (delta_r(uphi, position, 2)*(uphi[position] - delta_phi(ur, position, 1))));
-                    
-                    
-                    residual1 = (delta_r(Pressure, position, 3)/radius[i]) + delta_r2(Pressure, position, 3) + (delta_phi2(Pressure, position, 3)/(radius[i]*radius[i]))-(source);
-                    //should i hard code dp/dr = Re*uphi^2/r?
-                    e_ij = 2.0*((1.0/(grid_spacing[0]*grid_spacing[0])) + (1.0/(radius[i]*radius[i]*grid_spacing[1]*grid_spacing[1])) );
-                    pressure_new[position] = Pressure[position] + (omega*residual1/e_ij);
-                    if(first_time==1 && position == 2){
-                        //printf("source = %E, residual = %f, position = %d, pressure = %f \n", source, residual1, position, pressure_new[position]);
-
-                    }
-                
-                
-                
-                
-                    Pressure[position] = pressure_new[position];
-                    resid_sum += fabs(residual1);
-                }*/
-                
 
                 if(i==0){
                     P_new = 1.0;
                 }else if(i==1){
-                    source = uphi[position-N[1]]*uphi[position-N[1]]/radius[i-1];
+                    source = r1*Wi*Wi;
                     residual1 = Pressure[position] - Pressure[position-N[1]] - (grid_spacing[0]*source/omega);
                     P_new = Pressure[position] - (omega*residual1);
                     resid_sum+=fabs(residual1);
@@ -353,7 +310,10 @@ void relax_pressure(double *ur, double *uphi){
                     P_new = Pressure[position] - (omega*residual1);
                     resid_sum+=fabs(residual1);
                 }else{
-                    source = (2.0)*(((deriv_r((position-N[1]), uphi)/radius[i-1])*(uphi[(position-N[1])] - deriv_phi((position-N[1]), ur))) - (delta_r_ur((position-N[1]), ur)*delta_r_ur((position-N[1]), ur)) - ((1.0/(Re*radius[i-1]*radius[i-1]))*(delta_r_ur((position-N[1]), ur) + (delta_r_phi((position-N[1]), uphi)) + (delta_phi2(ur, (position - N[1]), 1)/radius[i-1]))));
+                    //source = (2.0)*(((deriv_r((position-N[1]), uphi)/radius[i-1])*(uphi[(position-N[1])] - deriv_phi((position-N[1]), ur))) - (delta_r_ur((position-N[1]), ur)*delta_r_ur((position-N[1]), ur)) - ((1.0/(Re*radius[i-1]*radius[i-1]))*(delta_r_ur((position-N[1]), ur) + (deriv_r((position-N[1]), value_new)) + (delta_phi2(ur, (position - N[1]), 1)/radius[i-1]))));
+                    source = (2.0)*(((delta_r(uphi,(position-N[1]), 2)/radius[i-1])*(uphi[(position-N[1])] - delta_phi(ur, (position-N[1]), 1))) - (delta_r(ur, (position-N[1]), 1)*delta_r(ur,(position-N[1]), 1)) - ((1.0/(Re*radius[i-1]*radius[i-1]))*(delta_r(ur, (position-N[1]), 1) + (delta_r(value_new,(position-N[1]), 2)) + (delta_phi2(ur, (position - N[1]), 1)/radius[i-1]))));
+                    
+                    
                     a = grid_spacing[1]*grid_spacing[1]*radius[i-1]*radius[i-1];
                     b = (-2.0*a) - (grid_spacing[0]*grid_spacing[1]*grid_spacing[1]*radius[i-1]);
                     c = grid_spacing[0]*grid_spacing[0];
@@ -382,55 +342,7 @@ void relax_pressure(double *ur, double *uphi){
                 }
                 
                 Pressure[position] = P_new;
-                
-                /*
-                if(j==0){
-                    Pjplus1 = Pressure[position + 1];
-                    Pjminus1 = Pressure[position + N[1]-1];
-                }else if(j==(N[1]-1)){
-                    Pjplus1 = Pressure[position - N[1] + 1];
-                    Pjminus1 = Pressure[position-1];
-                }else{
-                    Pjminus1 = Pressure[position-1];
-                    Pjplus1 = Pressure[position + 1];
-
-                }
-                term2 = (grid_spacing[0]*grid_spacing[0]*(Pjplus1 + Pjminus1));
-                term3 = (grid_spacing[0]*grid_spacing[0]*grid_spacing[1]*grid_spacing[1]*radius[i]*radius[i]*source);
-                
-                if(i==0){
-                    Piplus1 = Pressure[position + N[1]];
-                    Piminus1 = Piplus1 - (Re*V_phi_inner*V_phi_inner*grid_spacing[0]/radius[i]);
-
-   
-                }else if(i==(N[0]-1)){
-                    Piminus1 = Pressure[position - N[1]];
-                    Piplus1 = Piminus1 + (Re*V_phi_outer*V_phi_outer*grid_spacing[0]/radius[i]);
-
-                    
-                }else{
-                    Piminus1 = Pressure[position - N[1]];
-                    Piplus1 = Pressure[position + N[1]];
-                    
-                    
-                    //term1 = (Piplus1*grid_spacing[1]*grid_spacing[1]*radius[i]*(radius[i] + grid_spacing[0])) + (Piminus1*grid_spacing[1]*grid_spacing[1]*radius[i]*(radius[i]-grid_spacing[0]));
-                    //residual1 = term1+term2 - term3;
-                    //value = (omega*residual1/(2.0*((grid_spacing[1]*grid_spacing[1]*radius[i]*radius[i]) + (grid_spacing[0]*grid_spacing[0]))));
-                    
-                    //pressure_new[position] = ((1.0 - omega)*Pressure[position]) - value;
-                    
-                }
-                term1 = (Piplus1*grid_spacing[1]*grid_spacing[1]*radius[i]*(radius[i] + grid_spacing[0])) + (Piminus1*grid_spacing[1]*grid_spacing[1]*radius[i]*(radius[i]-grid_spacing[0]));
-                residual1 = term1+term2 - term3;
-                value = (omega*residual1/(2.0*((grid_spacing[1]*grid_spacing[1]*radius[i]*radius[i]) + (grid_spacing[0]*grid_spacing[0]))));
-
-                pressure_new[position] = ((1.0 - omega)*Pressure[position]) + value;
-                resid_sum += fabs(residual1);
-                
-                Pressure[position] = pressure_new[position];
-
-                
-                //if(resid==799) printf("term1 = %f, term2 = %f, term3 = %f, value = %f \n", term1, term2, term3, value);*/
+                //if(resid==499){printf("Pressure[%d] = %f \n", position, Pressure[position]);}
 
             }
         }
@@ -450,10 +362,13 @@ void relax_pressure(double *ur, double *uphi){
             
             }
         }
+        //visual_set_texdata(Pressure);
+
         //resid_sum = 0.0;
-        visual_set_texdata(Pressure);
         
     }
+    free(value_new);
+
     
     printf("residual here = %E, resid = %d\n", residual[resid-1], resid);
     printf("Check!, Pressure[10] - Pressure[9] = %f\n",Pressure[10] - Pressure[9]);
@@ -503,10 +418,64 @@ void open_file(){
     fclose(output2);
 }
 
+void integration(double *ur_new, double *up_new, double *ur_old, double *up_old, int one_two_or_three){
+    int i, j, position;
+    double L1r, L2r, L1phi, L2phi;
+    
+    for(i=0; i<N[0]; i++){
+        for(j=0; j<N[1]; j++){
+            position = (i*N[1]) + j;
+            if(i==0){
+                ur_new[position] = 0.0;
+                up_new[position] = V_phi_inner;
+            }else if(i==(N[0]-1)){
+                L1r = -delta_Pressure_r(position)+  ((1.0/Re)*(laplace(ur_old, position,1, i) - (ur_old[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up_old, position, 2)/(radius[i]*radius[i]))));
+                L2r = (-(up_old[position]*up_old[position]/radius[i]) + (ur_old[position]*delta_r(ur_old, position, 1)) + (up_old[position]*delta_phi(ur_old, position, 1)/radius[i]));
+                if(one_two_or_three==1){
+                    ur_new[position] = ur_old[position] + tSTEP*(L1r - L2r);
+                }else if(one_two_or_three==2){
+                    ur_new[position] = ((3.0/4.0)*U_R[position]) + (ur_old[position]/4.0) + (tSTEP*(L1r - L2r)/4.0);
+                }else{
+                    ur_new[position] = ((1.0/3.0)*U_R[position]) + (2.0*ur_old[position]/3.0) + (2.0*tSTEP*(L1r - L2r)/3.0);
+                }
+                //ur_new[position]=0.0;
+
+                up_new[position] = d1uphi[i];
+            }else{
+                L1r = -delta_Pressure_r(position)+  ((1.0/Re)*(laplace(ur_old, position,1, i) - (ur_old[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up_old, position, 2)/(radius[i]*radius[i]))));
+                L2r = (-(up_old[position]*up_old[position]/radius[i]) + (ur_old[position]*delta_r(ur_old, position, 1)) + (up_old[position]*delta_phi(ur_old, position, 1)/radius[i]));
+                
+                L1phi = -(delta_Pressure_phi(position)/radius[i]) + ((1.0/Re)*(laplace(up_old, position, 2, i) + (2.0*delta_phi(ur_old, position, 1)/(radius[i]*radius[i])) - (up_old[position]/(radius[i]*radius[i]))));
+                L2phi = ((ur_old[position]*delta_r(up_old, position, 2)) + (up_old[position]*delta_phi(up_old, position, 2)/radius[i]) + (up_old[position]*ur_old[position]/radius[i]));
+                
+                if(one_two_or_three==1){
+                    ur_new[position] = ur_old[position] + tSTEP*(L1r - L2r);
+                    up_new[position] = up_old[position] + tSTEP*(L1phi - L2phi);
+
+                }else if(one_two_or_three==2){
+                    ur_new[position] = ((3.0/4.0)*U_R[position]) + (ur_old[position]/4.0) + (tSTEP*(L1r - L2r)/4.0);
+                    up_new[position] = ((3.0/4.0)*U_PHI[position]) + (up_old[position]/4.0) + (tSTEP*(L1phi - L2phi)/4.0);
+                }else{
+                    ur_new[position] = ((1.0/3.0)*U_R[position]) + (2.0*ur_old[position]/3.0) + (2.0*tSTEP*(L1r - L2r)/3.0);
+                    up_new[position] = ((1.0/3.0)*U_PHI[position]) + (2.0*up_old[position]/3.0) + (2.0*tSTEP*(L1phi - L2phi)/3.0);
+                }
+                
+                
+                
+            }
+            
+            
+            //printf("L1 = %f, L2 = %f \n",L1, L2);
+        }
+    }
+    
+    
+}
+
 
 int main(int argc, char **argv)
 {
-    CFL = 0.005;
+    CFL = 0.07;
     r1 = 1.0;
     r2 = 2.0;
     N[0] = 100; // array size in each direction, N[0] = rdim
@@ -514,8 +483,8 @@ int main(int argc, char **argv)
     phi_1 = 0.0;
     phi_2 = 2.0*Pi;
     //phis go from phi = [0, 2pi]
-    grid_spacing[0] =(r2-r1)/N[0];
-    grid_spacing[1] = (phi_2 - phi_1)/N[1]; // grid spacing
+    grid_spacing[0] =(r2-r1)/100.0;
+    grid_spacing[1] = (phi_2 - phi_1)/100.0; // grid spacing
     U_R  = (double*) malloc(N[0]*N[1]*sizeof(double));
     U_PHI  = (double*) malloc(N[0]*N[1]*sizeof(double));
     Pressure = (double*) malloc((N[0]+2)*N[1]*sizeof(double));
@@ -546,7 +515,9 @@ int main(int argc, char **argv)
     //Re = V_phi_outer*grid_spacing[1]/nu; //Reynolds number
     Re = 1.0;
     double rho;
-    rho = cos(Pi/(N[0]-98.0));
+    //rho = cos(Pi/(N[0]-97.9981552));
+    //rho = cos(Pi/(N[0]-97.99));
+    rho = cos(Pi/(2.00184));
     omega= 2.0/(1.0+sqrt(1.0-(rho*rho)));
     printf("Re = %f, omega = %f \n", Re, omega);
     resid = 0;
@@ -626,7 +597,7 @@ void visual_init(int argc, char **argv)
     
     // Establish texture id's and data
     glGenTextures(1, &TextureMap);
-    TextureData = (GLfloat*) malloc(N[0]*N[1]*3*sizeof(GLfloat));
+    TextureData = (GLfloat*) malloc((N[0])*N[1]*3*sizeof(GLfloat));
     counter = 0;
 }
 
@@ -635,11 +606,11 @@ void visual_set_texdata(double *z)
     double maxval = -1e13;
     double minval = +1e13;
     int n, i, j;
-    for (n=0; n<(N[0]*N[1]); ++n) {
+    for (n=0; n<((N[0])*N[1]); ++n) {
         maxval = (z[n] > maxval) ? z[n] : maxval;
         minval = (z[n] < minval) ? z[n] : minval;
     }
-    for (i=0; i<N[0]; i++) {
+    for (i=0; i<(N[0]); i++) {
         for (j=0; j<N[1]; j++) {
             
             const int m = i*N[1] + j;
@@ -693,7 +664,7 @@ static void DrawGLScene()
     glFlush();
     glutSwapBuffers();
     
-    //integrate_u();
+    integrate_u();
 }
 
 
@@ -746,10 +717,13 @@ void KeyPressed(unsigned char key, int x, int y)
 
     }
     else if (key == 's') {
-        save_data();
+        save_data(U_R, U_PHI);
     }
     glutPostRedisplay();
 }
+
+
+
 
 void integrate_u(){
     double *ur1 = (double*) malloc(N[0]*N[1]*sizeof(double));
@@ -758,16 +732,32 @@ void integrate_u(){
     double *up1 = (double*) malloc(N[0]*N[1]*sizeof(double));
     double *up2 = (double*) malloc(N[0]*N[1]*sizeof(double));
     double *up3 = (double*) malloc(N[0]*N[1]*sizeof(double));
-    double L1r, L2r, L1phi, L2phi;
-    
+    int i, j, position;
+
     relax_pressure(U_R, U_PHI);
     
-    save_data();
+    //save_data();
     //return;
+    /*if(Wi==0){
+        if(Wo==0){
+            tSTEP = CFL*(r2-r1);
+        }else{
+            tSTEP = CFL*(r2-r1)/V_phi_outer;
+        }
+    }else if(Wo==0){
+        if(Wi ==0){
+            tSTEP = CFL*(r2-r1);
+        }else{
+            tSTEP = CFL*(r2-r1)/V_phi_inner;
+        }
+    }else{
+        tSTEP = CFL*(r2-r1);
+    }*/
     
-    tSTEP = CFL*grid_spacing[0]*grid_spacing[1]/((V_phi_outer*V_phi_outer) + (V_phi_inner*V_phi_inner));
+    tSTEP = CFL*grid_spacing[0]*grid_spacing[1]/((V_phi_outer) + (V_phi_inner));
+    //tSTEP = CFL*grid_spacing[0]*grid_spacing[1];
     //V_phi_inner += acceleration*tSTEP;
-    int i, j, position;
+    /*int i, j, position;
     //relax_pressure(U_R, U_PHI, 2);
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
@@ -779,8 +769,10 @@ void integrate_u(){
                 L1r = -delta_Pressure_r(position)+  ((1.0/Re)*(laplace(U_R, position,1, i) - (U_R[position]/(radius[i]*radius[i])) - (2.0*delta_phi(U_PHI, position, 2)/(radius[i]*radius[i]))));
                 L2r = (-(U_PHI[position]*U_PHI[position]/radius[i]) + (U_R[position]*delta_r(U_R, position, 1)) + (U_PHI[position]*delta_phi(U_R, position, 1)/radius[i]));
                 ur1[position] = U_R[position] + tSTEP*(L1r - L2r);
+                //ur1[position] = 0.0;
                 
-                up1[position] = Wo*radius[i];
+                //up1[position] = Wo*radius[i];
+                up1[position] = d1uphi[i];
             }else{
                 L1r = -delta_Pressure_r(position)+  ((1.0/Re)*(laplace(U_R, position,1, i) - (U_R[position]/(radius[i]*radius[i])) - (2.0*delta_phi(U_PHI, position, 2)/(radius[i]*radius[i]))));
                 L2r = (-(U_PHI[position]*U_PHI[position]/radius[i]) + (U_R[position]*delta_r(U_R, position, 1)) + (U_PHI[position]*delta_phi(U_R, position, 1)/radius[i]));
@@ -797,6 +789,7 @@ void integrate_u(){
             //printf("L1 = %f, L2 = %f \n",L1, L2);
         }
     }
+    //return;
     //second integration now
     //relax_pressure(ur1, up1, 2);
     for(i=0; i<N[0]; i++){
@@ -809,9 +802,10 @@ void integrate_u(){
                 L1r = -delta_Pressure_r(position)+((1.0/Re)*(laplace(ur1, position,1, i) - (ur1[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up1, position, 2)/(radius[i]*radius[i]))));
                 L2r = (-(up1[position]*up1[position]/radius[i]) + (ur1[position]*delta_r(ur1, position, 1)) + (up1[position]*delta_phi(ur1, position, 1)/radius[i]));
                 ur2[position] = ((3.0/4.0)*U_R[position]) + (ur1[position]/4.0) + (tSTEP*(L1r - L2r)/4.0);
-                
-                
-                up2[position] = Wo*radius[i];
+                //ur2[position] = 0.0;
+                up2[position] = d1uphi[i];
+
+                //up2[position] = Wo*radius[i];
             }else{
                 L1r = -delta_Pressure_r(position)+((1.0/Re)*(laplace(ur1, position,1, i) - (ur1[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up1, position, 2)/(radius[i]*radius[i]))));
                 L2r = (-(up1[position]*up1[position]/radius[i]) + (ur1[position]*delta_r(ur1, position, 1)) + (up1[position]*delta_phi(ur1, position, 1)/radius[i]));
@@ -827,6 +821,7 @@ void integrate_u(){
             
         }
     }
+    return;
     //third integration
     //relax_pressure(ur2, up2, 2);
 
@@ -840,7 +835,10 @@ void integrate_u(){
                 L1r = -delta_Pressure_r(position)+((1.0/Re)*(laplace(ur2, position,1, i) - (ur2[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up2, position, 2)/(radius[i]*radius[i]))));
                 L2r = (-(up2[position]*up2[position]/radius[i]) + (ur2[position]*delta_r(ur2, position, 1)) + (up2[position]*delta_phi(ur2, position, 1)/radius[i]));
                 ur3[position] = ((1.0/3.0)*U_R[position]) + (2.0*ur2[position]/3.0) + (2.0*tSTEP*(L1r - L2r)/3.0);
-                up3[position] = Wo*radius[i];
+                //ur3[position] = 0.0;
+                //up3[position] = Wo*radius[i];
+                up3[position] = d1uphi[i];
+
             }else{
                 L1r = -delta_Pressure_r(position)+((1.0/Re)*(laplace(ur2, position,1, i) - (ur2[position]/(radius[i]*radius[i])) - (2.0*delta_phi(up2, position, 2)/(radius[i]*radius[i]))));
                 L2r = (-(up2[position]*up2[position]/radius[i]) + (ur2[position]*delta_r(ur2, position, 1)) + (up2[position]*delta_phi(ur2, position, 1)/radius[i]));
@@ -855,7 +853,15 @@ void integrate_u(){
             
             
         }
-    }
+    }*/
+    integration(ur1, up1, U_R, U_PHI, 1);
+    save_data(ur1, up1);
+    //return;
+    integration(ur2, up2, ur1, up1, 2);
+
+    integration(ur3, up3, ur2, up2, 3);
+    //return;
+
     //relax_pressure(ur3, up3, 2);
 
     double difference = 0.0;
@@ -884,11 +890,11 @@ void integrate_u(){
     else if  (TextureMode == 'o') {
         visual_set_texdata(Pressure);
     }
-    if(difference<=(1e-8)){
-        save_data();
+    /*if(difference<=(1e-8)){
+        //save_data();
         glutDestroyWindow(WindowID);
         exit(0);
         
-    }
+    }*/
     
 }

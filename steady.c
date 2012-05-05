@@ -81,7 +81,7 @@ int main(int argc, char **argv)
     double r1, r2;
     r1 = 1.0;
     r2 = 2.0;
-    dr = (r2-r1)/Rdim;
+    dr = (r2-r1)/100.0;
     double omega;
     omega= 2.0;
     //V1 = r1*omega;
