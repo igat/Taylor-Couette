@@ -67,10 +67,9 @@ double deriv_r(int position, double *d1uphi){
         //value = (w[position + N[1]] - w[position-N[1]])/(grid_spacing[0]); 
         value = (w[position+P_size] - w[position-P_size])/(2.0*grid_spacing[0]); 
     }
-    return value;
-    //value = (d1uphi[position] - d1uphi[position-P_size])/(grid_spacing[0]); 
+    //value = (w [position] - w [position-P_size])/(grid_spacing[0]); 
     //printf("derivative in r of uphi = %f, d1uphi[%d] = %f \n", value, position, d1uphi[position]);
-    //return value;
+    return value;
 }
 
 double deriv_phi(int position, double *d1ur1){
@@ -84,7 +83,7 @@ double deriv_phi(int position, double *d1ur1){
         value = (w[position + 1] - w[position-1])/(2.0*grid_spacing[1]);
     }
     
-    //printf("derivative in phi of ur = %f, d1ur[%d] = %f \n", value, position, d1ur[position]);
+    ///printf("derivative in phi of ur = %f, d1ur[%d] = %f \n", value, position, d1ur[position]);
     return value;
 }
 
@@ -105,7 +104,7 @@ double delta_r_ur(int position, double *d1ur1){
         value = (w[position+P_size] - w[position-P_size])/(2.0*grid_spacing[0]); 
     }
 
-    //value = (d1ur[position] - d1ur[position-P_size])/(grid_spacing[0]); 
+    //value = (w [position] - w [position-P_size])/(grid_spacing[0]); 
     //printf("derivative of ur in r = %E, d1ur[%d] = %E \n", value, position, d1ur[position]);
     return value;
 }
@@ -159,7 +158,7 @@ void fill_source(double *d1uphi, double *d1ur){
             source[i] = r2*Wo*Wo;
         }else{
             //printf("radius[%d] = %f \n", position, radius[position]);
-            source[i] = 2.0*((deriv_r((i-P_size), d1uphi)*((d1uphi[i-P_size]/radius[position]) - (deriv_phi((i-P_size), d1ur)/radius[position]))) - (delta_r_ur((i-P_size), d1ur)*delta_r_ur((i-P_size), d1ur)) - ((1.0/(Re*radius[position]*radius[position]))*(delta_r_ur((i-P_size), d1ur) + (deriv_r((i-P_size), value_new)) + (deriv_phi2(d1ur, (i-P_size))/radius[position]))));
+            source[i] = 2.0*((deriv_r((i-P_size), d1uphi)*((d1uphi[i-P_size]/radius[position]) - (deriv_phi((i-P_size), d1ur)/radius[position]))));// - (delta_r_ur((i-P_size), d1ur)*delta_r_ur((i-P_size), d1ur)) - ((1.0/(Re*radius[position]*radius[position]))*(delta_r_ur((i-P_size), d1ur) + (deriv_r((i-P_size), value_new)) + (deriv_phi2(d1ur, (i-P_size))/radius[position]))));
             //source[i] = (2.0)*(((delta_r(d1uphi,(i-P_size), 2)/radius[position])*(d1uphi[(i-P_size)] - delta_phi(d1ur, (i-P_size), 1))) - (delta_r(d1ur, (i-P_size), 1)*delta_r(d1ur,(i-P_size), 1)) - ((1.0/(Re*radius[position]*radius[position]))*(delta_r(d1ur, (i-P_size), 1) + (delta_r(value_new,(i-P_size), 2)) + (delta_phi2(d1ur, (i-P_size), 1)/radius[position]))));
             //source[i] = 0.0;
         }

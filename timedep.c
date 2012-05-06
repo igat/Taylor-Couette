@@ -496,7 +496,7 @@ static void DrawGLScene()
     glFlush();
     glutSwapBuffers();
     
-    //integrate_u();
+    integrate_u();
 }
 
 
