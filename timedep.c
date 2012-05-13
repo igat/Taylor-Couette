@@ -7,9 +7,12 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h> 
+
 #include <complex.h>
 #include <GL/glut.h>
 #include "poisson1d_2.h"
+#include "steady.h"
 
 /*
  
@@ -35,7 +38,7 @@ static double r1, r2;
 static int N[2];
 static double phi_1, phi_2;
 static double *U_R, *U_PHI, *Pressure;
-static double *d1uphi;
+static double *d1uphi, *d1ur;
 //static double *Lr, *Lphi;
 static double grid_spacing[2];
 static double *radius, *phi_value;
@@ -43,9 +46,17 @@ static double Re;
 static double V_phi_outer, V_phi_inner, Wi, Wo;
 
 static double CFL;
-static double time, tSTEP;
+static double current_time, tSTEP;
 static char TextureMode = 'r';
 static int First_Time;
+#define TRUE  1
+#define FALSE 0
+typedef int boolean;
+static boolean save;
+
+
+
+static double pertubation_amount;
 
 void visual_init(int argc, char **argv);
 void visual_set_texdata(double *z);
@@ -69,6 +80,7 @@ void initialize_u(){
     
     }
     printf("Initialized psi and omega \n");
+    radius[N[0]] = r2;
                  
             
 }
@@ -100,7 +112,7 @@ double delta_r2(double *w, int position, int r_or_phi){
     }else if(position>=((N[0]-1)*N[1])){        //reflecting boundary
         //printf("at boundary condition (greater than n0-1*n1) for r2. position = %d \n", position);
         if(r_or_phi==1){
-            value = (w[position-N[1]]-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]);
+            value = (-(2.0*w[position]))/(grid_spacing[0]*grid_spacing[0]);
         }else{
             value = 0.0;
         }
@@ -116,7 +128,7 @@ double delta_phi(double *w, int position, int r_or_phi){
     double value;
     if(position%N[1]==0){
         value = (w[position + 1] - w[position + N[1]-1])/(2.0*grid_spacing[1]);
-    }else if(position%N[1] ==(N[1]-1)){
+    }else if(position%N[1]==(N[1]-1)){
         value = (w[position-N[1]+1] - w[position-1])/(2.0*grid_spacing[1]);
     }else{
         value = (w[position + 1] - w[position-1])/(2.0*grid_spacing[1]);
@@ -136,9 +148,10 @@ double delta_r(double *w, int position, int r_or_phi){
         //value = (2.0*w[position + N[1]])/(grid_spacing[0]);
     }else if(position>=((N[0]-1)*N[1])){        //reflecting boundary everywhere
         if(r_or_phi==1){
-            value = (-w[position-N[1]])/(2.0*grid_spacing[0]); 
+            value = (-w[position-N[1]])/(grid_spacing[0]); 
         }else{
-            value = Wo;
+            //value = Wo;
+            value = ((Wo*r2) - w[position-N[1]])/(2.0*grid_spacing[0]);
         }
 
         //value = (2.0*w[position-N[1]])/(grid_spacing[0]); 
@@ -155,10 +168,11 @@ double laplace(double *w, int position, int r_or_phi, int r_pos){
     value = (delta_r(w, position, r_or_phi)/radius[r_pos])+ delta_r2(w, position, r_or_phi) + (delta_phi2(w, position, r_or_phi)/(radius[r_pos]*radius[r_pos]));
     return value;
 }
-void save_data(){
-    output=fopen("Pressure_timedep.txt", "w");
-    output2=fopen("ur_timedep.txt", "w");
-    output3 = fopen("uphi_timedep.txt", "w");
+void save_data(char *Pressure_filename, char *ur_filename, char *uphi_filename){
+    output=fopen(Pressure_filename, "w");
+    output2=fopen(ur_filename, "w");
+    output3 = fopen(uphi_filename, "w");
+
     int i, j, position;
     for(i=0; i<(N[0]+2); i++){
         for(j=0; j<N[1]; j++){
@@ -175,7 +189,7 @@ void save_data(){
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
-            fprintf(output2, "%E  ", U_R[position]);
+            fprintf(output2, "%16.12e  ", U_R[position]);
             fprintf(output3, "%E  ", U_PHI[position]);
 
             if(j==(N[1]-1)){
@@ -202,11 +216,14 @@ double delta_Pressure_r(int position){
 double delta_Pressure_phi(int position){
     double value;
     if(position%N[1]==0){
-        value = (Pressure[position+N[1]+1] - Pressure[position + (2*N[1]) - 1])/(2.0*grid_spacing[1]);
+        //value = (Pressure[position+N[1]] - Pressure[position + (2*N[1]) - 1])/(2.0*grid_spacing[1]);
+        value = (Pressure[position+N[1]+1] - Pressure[position + N[1] + N[1] - 1])/(grid_spacing[1]);
     }else if(position%N[1] ==(N[1]-1)){
+        //value = (Pressure[position+N[1]] - Pressure[position + N[1] - 1])/(2.0*grid_spacing[1]);
         value = (Pressure[position+1] - Pressure[position + N[1] - 1])/(2.0*grid_spacing[1]);
     }else{
-        value = (Pressure[position+N[1]+1] - Pressure[position + N[1] - 1])/(2.0*grid_spacing[1]);
+        //value = (Pressure[position+N[1]] - Pressure[position + N[1] - 1])/(2.0*grid_spacing[1]);
+        value = (Pressure[position+N[1]+1] - Pressure[position + N[1] - 1])/(grid_spacing[1]);
     }
     //printf("Pressure derivative = %E, uphi[%d]^2/radius = %f \n",value,position, U_PHI[position]*U_PHI[position]/radius[position/N[0]]);
 
@@ -244,16 +261,40 @@ void open_file(){
     fclose(output2);
     
 }
+/*
+void read_in_us_and_pressure(){
+    //output = fopen("ur_timedep.txt", "r");
+    //output2 = fopen("uphi_timedep.txt", "r");
+    output = fopen("ur_td_wi=10_w0=0.txt", "r");
+    //output2 = fopen("uphi_td.txt", "r");
+    //output3 = fopen("Pressure_timedep.txt", "r");
+    char line[800000];
+    int i=0;
 
+    //fclose(output2);
+    i=0;
+    while(fgets(line, 800000, output) !=NULL){
+        sscanf(line, "%lf",&d1ur[i]);
+        
+        //printf("%f, i=%d \n", d1uphi[i], i);
+        i+=1;
+    }
+    fclose(output);
+    
+}
+*/
 void pressure_pertubations(){
     int i, j, position;
     double pertubation, epsilon;
-    epsilon = 5.0e-1;
+    epsilon = 5.0e-2;
     for(i=0; i<(N[0]+2); i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[0]) + j;
-            pertubation = 1.0 + epsilon*cos(12.0*phi_value[j]);
+            //pertubation = 1.0 + (epsilon*cos(pertubation_amount*phi_value[j]));
+            pertubation = 1.0 + (exp(-r2*(r1 + ((i-1)*grid_spacing[0]))*(r1 + ((i-1)*grid_spacing[0])))*epsilon*cos(pertubation_amount*phi_value[j]));
+            
             Pressure[position] = Pressure[position]*pertubation;
+            //printf("j = %d, pertub = %f \n", j, pertubation);
         }
     }
 }
@@ -278,7 +319,7 @@ void integration(double *ur_new, double *up_new, double *ur_old, double *up_old,
                 }else{
                     ur_new[position] = ((1.0/3.0)*U_R[position]) + (2.0*ur_old[position]/3.0) + (2.0*tSTEP*(L1r - L2r)/3.0);
                 }
-                //ur_new[position]=0.0;
+                ur_new[position]=0.0;
                 
                 up_new[position] = d1uphi[i];
             }else{
@@ -316,40 +357,46 @@ void integration(double *ur_new, double *up_new, double *ur_old, double *up_old,
 
 int main(int argc, char **argv)
 {
-    CFL = 0.0006;
+    CFL = 0.055;
+    //CFL = 0.00015;
     r1 = 1.0;
-    r2 = 2.0;
-    N[0] = 100; // array size in each direction, N[0] = rdim
-    N[1] = 100; //N[1] = PhiDim
+    r2 = 2.4;
+    N[0] = 200; // array size in each direction, N[0] = rdim
+    N[1] = 200; //N[1] = PhiDim
     phi_1 = 0.0;
     phi_2 = 2.0*Pi;
+    double n2 = (double)N[0];
     //phis go from phi = [0, 2pi]
-    grid_spacing[0] =(r2-r1)/N[0];
-    grid_spacing[1] = (phi_2 - phi_1)/N[1]; // grid spacing
+    grid_spacing[0] =(r2-r1)/n2;
+    grid_spacing[1] = (phi_2 - phi_1)/n2; // grid spacing
     U_R  = (double*) malloc(N[0]*N[1]*sizeof(double));
     U_PHI  = (double*) malloc(N[0]*N[1]*sizeof(double));
-    d1uphi = (double*) malloc(N[0]*sizeof(double));
-    Pressure = (double*) malloc((N[0]+2)*N[1]*sizeof(double));
-    //double turn_omega = 2.0;
-    open_file();
+    d1uphi = (double*) malloc((N[0]+1)*sizeof(double));
+    //d1ur = (double*) malloc(N[0]*sizeof(double));
+    pertubation_amount=10.0;
 
-    Wi = 10.0;
+    Pressure = (double*) malloc((N[0]+2)*(N[1])*sizeof(double));
+    //double turn_omega = 2.0;
+    //open_file();
+    
+    save = TRUE;
+    //save = TRUE;
+
+    Wi = 2.0;
     Wo = 0.0;
     V_phi_inner = r1*Wi;
     V_phi_outer = r2*Wo;
-    time = 0.0;
-    /* --fix these!!!
-     Boundary conditions:
-          
-     */
+    current_time = 0.0;
     
-    radius = (double*) malloc((N[0])*sizeof(double));
+    steady(V_phi_inner, V_phi_outer, N[0], d1uphi, r1, r2);
+    
+    radius = (double*) malloc((N[0]+1)*sizeof(double));
     phi_value = (double*) malloc((N[1])*sizeof(double));
     
+    //read_in_us_and_pressure();
+    
     initialize_u();
-    
-    
-    
+
     
     //now we have to use a finite differencing scheme and integrate
     //the vorticity in time using RK3 and then use a relaxing scheme
@@ -359,7 +406,7 @@ int main(int argc, char **argv)
     
     const double nu = 0.1; //viscocity
     //Re = V_phi_outer*grid_spacing[1]/nu; //Reynolds number
-    Re = 1.0;
+    Re = 2065.0;
     printf("Re = %f, \n",Re );
     First_Time = 1.0;
 
@@ -369,6 +416,8 @@ int main(int argc, char **argv)
 
     free(radius);
     free(Pressure);
+    //free(d1ur);
+    free(d1uphi);
     free(U_PHI);
     free(U_R);
     
@@ -380,8 +429,8 @@ static void DrawGLScene();
 static void ResizeGLScene(int Width, int Height);
 static void KeyPressed(unsigned char key, int x, int y);
 static void SpecialKeyPressed(int key, int x, int y);
-static int counter;
-//static double time = 0.0;
+static int counter = 0;
+static double time = 0.0;
 static int WindowID;
 static int WindowWidth    = 768;
 static int WindowHeight   = 768;
@@ -408,7 +457,7 @@ void visual_init(int argc, char **argv)
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH);
     glutInitWindowSize(WindowWidth, WindowHeight);
     glutInitWindowPosition(80, 80);
-    WindowID = glutCreateWindow("2D Euler");
+    WindowID = glutCreateWindow("Navier-Stokes");
     
     glutDisplayFunc       (DrawGLScene);
     glutIdleFunc          (DrawGLScene);
@@ -470,6 +519,16 @@ void visual_set_texdata(double *z)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, 3, N[0], N[1], 0, GL_RGB, GL_FLOAT, TextureData);
 }
+int getlen(int a)
+{
+    if(a==0) {return 1;}
+    else{
+        int count=0;
+        if (a<0) {a=-a;}
+        while (a>0) {count++; a/=10;}
+        return count;
+    }
+}
 
 
 static void DrawGLScene()
@@ -497,6 +556,52 @@ static void DrawGLScene()
     glutSwapBuffers();
     
     integrate_u();
+    
+    
+    if(save==TRUE){
+        if(current_time>(time + 3E-4) || current_time==tSTEP){
+            char P_filname[100];
+            char ur_filname[100];
+            char uphi_filname[100];
+            counter+=1;
+            strcat(P_filname, "Pressure_timedep2");
+            strcat(ur_filname, "ur_timedep2");
+            strcat(uphi_filname, "uphi_timedep2");
+            int num = counter;
+            int dim = getlen(num);
+            int zeros = 7-dim;
+            int i;
+            for(i=0; i<zeros; i++){
+                strcat(P_filname, "0" );
+                strcat(ur_filname, "0" );
+                strcat(uphi_filname, "0" );
+            }
+            char flonum[9];
+            sprintf(flonum, "%d", num);
+            strcat(P_filname, flonum);
+            strcat(P_filname, ".txt");
+            strcat(ur_filname, flonum);
+            strcat(ur_filname, ".txt");
+            strcat(uphi_filname, flonum);
+            strcat(uphi_filname, ".txt");
+            
+            save_data(P_filname, ur_filname, uphi_filname);
+            
+            time = current_time;
+            P_filname[0]='\0'; 
+            ur_filname[0]='\0'; 
+            uphi_filname[0]='\0';
+        }
+        
+    }
+    
+    
+     
+    
+    
+    
+    
+    
 }
 
 
@@ -550,7 +655,7 @@ void KeyPressed(unsigned char key, int x, int y)
     }
     
     else if (key == 's') {
-        save_data();
+        save_data("Pressure_td_wi=10_w0=02.txt","ur_td_wi=10_w0=02.txt","uphi_td_wi=10_w0=02.txt");
     }
     glutPostRedisplay();
 }
@@ -564,21 +669,23 @@ void integrate_u(){
     double *up3 = (double*) malloc(N[0]*N[1]*sizeof(double));
     double L1r, L2r, L1phi, L2phi;
     int i, j, position;
-
-
-    poisson_pressure(U_PHI, U_R, Pressure, N[0], r1, r2, Wi, Wo, Re);
     
-    if(First_Time==5.0){
+
+    double n2 = (double)N[0];
+    poisson_pressure(U_PHI, U_R, Pressure, N[0], r1, r2, Wi, Wo, Re,n2, pertubation_amount);
+    
+    if(First_Time==1.0){
         pressure_pertubations();
+        //printf("here \n");
         First_Time=2.0;
     }
     
-    save_data();
+    //save_data("Pressure_td_wi=10_w0=0.txt","ur_td_wi=10_w0=0.txt","uphi_td_wi=10_w0=0.txt");
     //return;
 
 
 
-    tSTEP = CFL*(r2-r1)/((V_phi_outer) + (V_phi_inner));
+    tSTEP = CFL*(r2-r1)/(((V_phi_outer) + (V_phi_inner))*N[0]);
     //tSTEP = CFL*grid_spacing[0]*grid_spacing[1];
     
     integration(ur1, up1, U_R, U_PHI, 1);
@@ -589,12 +696,18 @@ void integrate_u(){
     integration(ur3, up3, ur2, up2, 3);
     
     double difference = 0.0;
+    double difference_ur = 0.0;
+    double largest_ur = 1e-12;
     for(i=0; i<N[0]; i++){
         for(j=0; j<N[1]; j++){
             position = (i*N[1]) + j;
             difference += fabs(U_PHI[position] - up3[position]);
+            difference_ur += fabs(U_R[position] - ur3[position]);
             U_R[position] = ur3[position];
             U_PHI[position] = up3[position];
+            if(largest_ur<fabs(U_R[position])){
+                largest_ur=fabs(U_R[position]);
+            }
         }
     }
     free(up3);
@@ -603,8 +716,9 @@ void integrate_u(){
     free(ur3);
     free(ur2);
     free(ur1);
-    time +=tSTEP;
-    printf("Current time = %f , difference = %E \n", time, difference);
+    current_time +=tSTEP;
+    //printf("largest_ur = %E \n", largest_ur);
+    printf("Current time = %f , difference = %E, CFL = %E \n", current_time, difference, CFL);
     if (TextureMode == 'r') {
         visual_set_texdata(U_R);
     }
@@ -614,8 +728,37 @@ void integrate_u(){
     else if (TextureMode == 'o') {
         visual_set_texdata(Pressure);
     }
-    if(difference<=(1e-8)){
-        save_data();
+    if(current_time>0.05){
+
+        //if(largest_ur>(10.0*difference_ur) && First_Time==0.0){
+        if(First_Time==0.0){
+
+            First_Time=1.0;
+            
+        }
+    }
+    if(difference>1e2){
+        CFL = CFL/10.0;
+        
+        /*
+        if(CFL>0.007){
+            CFL -=0.024;
+        }else if(CFL<0.007 && CFL>0.001){
+            CFL -= 0.001;
+        }else{
+            CFL -=0.00005;
+        }*/
+    }
+    
+    if(difference>=(1e20)){
+        //save_data("Pressure_td_wi=10_w0=0.txt","ur_td_wi=10_w0=0.txt","uphi_td_wi=10_w0=0.txt");
+        //First_Time==1.0;
+        //save = TRUE;
+        output = fopen("Instability.txt", "w");
+        fprintf(output, "Instability Started, program crashed \n");
+        fprintf(output, "Current time = %f \n", current_time);
+        fprintf(output, "Last difference = %E \n", difference);
+        fclose(output);
         glutDestroyWindow(WindowID);
         exit(0);
         

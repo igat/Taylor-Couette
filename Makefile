@@ -3,12 +3,9 @@ GL = -L/usr/X11/lib -lglut -lGLU -lGL -lXmu -lXext -lXi -lX11 -I/usr/X11/include
 
 
 
-default : steady timedep
-
-steady: steady.c
-	$(CC) $(CLFAGS) -o $@ $^
+default :  timedep
 
 
-timedep: timedep.c poisson1d_2.c
+timedep: timedep.c poisson1d_2.c steady.c
 	$(CC) $(CLFAGS) -o $@ $^ $(Csparce) $(GL)
 

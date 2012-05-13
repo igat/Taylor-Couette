@@ -33,6 +33,6 @@ void finite_difference();
 
 void sparse();
 
-void poisson_pressure(double *d1uphi2, double *d1ur2, double *pressure, int P_size, double r1, double r2, double Wi, double Wo, double Re2);
+void poisson_pressure(double *d1uphi2, double *d1ur2, double *pressure, int P_size, double r1, double r2, double Wi, double Wo, double Re2, double n2, double pertubs);
 
 #endif

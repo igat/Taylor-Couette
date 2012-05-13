@@ -74,27 +74,28 @@ void find_s(double s){
 }
 
 
-int main(int argc, char **argv)
+void steady(double Vinner, double Vouter, int rDIM, double *u_phi1, double rinner, double router)
 {
     
-    Rdim = 100;
+    u_phi = &u_phi1[0];
+    Rdim = rDIM ;
     double r1, r2;
-    r1 = 1.0;
-    r2 = 2.0;
+    r1 = rinner;
+    r2 = router;
     dr = (r2-r1)/Rdim;
     double omega;
     omega= 2.0;
     //V1 = r1*omega;
     //V2 = r2*omega;
     
-    V1 = 10.0;
-    V2 = 0.0;
+    V1 = Vinner;
+    V2 = Vouter;
     
     double s, s_old;
     
     s = 1.0;
     
-    u_phi  = (double*) malloc((Rdim+1)*sizeof(double));
+    //u_phi  = (double*) malloc((Rdim+1)*sizeof(double));
     f = (double*) malloc((Rdim+1)*sizeof(double));
     U = (double*) malloc((Rdim+1)*sizeof(double));
     F = (double*) malloc((Rdim+1)*sizeof(double));
@@ -129,7 +130,7 @@ int main(int argc, char **argv)
     for(g = 0; g<(Rdim); g++)
     {
         
-        fprintf(output, "%f\n", u_phi[g]);
+        fprintf(output, "%16.12e\n", u_phi[g]);
         fprintf(output3, "%f \n", 0.0);
 
         fprintf(output2, "%f \n", (u_phi[g]*u_phi[g]));
@@ -142,6 +143,6 @@ int main(int argc, char **argv)
 
 
 
-    return 0;
+    //return 0;
 }
 
